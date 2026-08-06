@@ -20,24 +20,27 @@ class LocalMissionRepository implements MissionRepository {
 
     try {
       final String jsonString = await rootBundle.loadString(
-        'assets/curriculum/mission_001.json',
+        'assets/curriculum/missions.json',
       );
 
-      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+      final List<dynamic> jsonList = jsonDecode(jsonString) as List<dynamic>;
 
-      final mission = Mission(
-        id: jsonMap['id'] as String,
-        numberLabel: jsonMap['numberLabel'] as String,
-        title: jsonMap['title'] as String,
-        description: jsonMap['description'] as String,
-        objective: jsonMap['objective'] as String,
-        validAnswers: List<String>.from(jsonMap['validAnswers'] as List),
-      );
+      _cachedMissions = jsonList.map((dynamic jsonMap) {
+        final map = jsonMap as Map<String, dynamic>;
+        return Mission(
+          id: map['id'] as String,
+          numberLabel: map['numberLabel'] as String,
+          title: map['title'] as String,
+          description: map['description'] as String,
+          objective: map['objective'] as String,
+          validAnswers: List<String>.from(map['validAnswers'] as List),
+          isUnlocked: map['isUnlocked'] as bool? ?? false,
+        );
+      }).toList();
 
-      _cachedMissions = [mission];
       return _cachedMissions!;
     } catch (e) {
-      // In a production app, log this using Logger.e()
+      // [FIXME]: Replace silent catch with robust typed exception handling and Logger.e()
       return [];
     }
   }

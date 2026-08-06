@@ -1,0 +1,48 @@
+Folder PATH listing
+Volume serial number is 00000278 B603:4696
+C:\USERS\ASUS\PYTHON_FORGE\LIB
+|   main.dart
+|   
++---core
+|   +---providers
+|   |       app_version_provider.dart
+|   |       
+|   +---router
+|   |       app_router.dart
+|   |       
+|   +---theme
+|   |   |   app_colors.dart
+|   |   |   app_radius.dart
+|   |   |   app_spacing.dart
+|   |   |   app_theme.dart
+|   |   |   app_typography.dart
+|   |   |   
+|   |   \---constants
+|   |       \---utils
+|   \---widgets
+|           forge_button.dart
+|           forge_card.dart
+|           forge_scaffold.dart
+|           section_title.dart
+|           
++---features
+|   \---poc
+|       +---data
+|       |   \---repositories
+|       |           mission_repository.dart
+|       |           
+|       +---domain
+|       |   \---models
+|       |           mission.dart
+|       |           
+|       \---presentation
+|           +---providers
+|           |       mission_providers.dart
+|           |       
+|           \---screens
+|                   home_screen.dart
+|                   mission_screen.dart
+|                   
+\---screens
+        home_screen.dart
+        

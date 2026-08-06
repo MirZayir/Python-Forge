@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/forge_button.dart';
 import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
@@ -18,9 +17,8 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Load missions from the local repository via Riverpod
+    // Load the full list of missions from the provider
     final List<Mission> missions = ref.watch(missionsProvider);
-    final Mission? currentMission = missions.isNotEmpty ? missions.first : null;
 
     return ForgeScaffold(
       body: SingleChildScrollView(
@@ -47,92 +45,32 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.massive),
 
-            // Continue Learning Section
+            // Curriculum Section
             Text(
-              'Continue Learning',
+              'Curriculum',
               style: AppTypography.title.copyWith(color: Colors.white),
             ),
             const SizedBox(height: AppSpacing.medium),
 
-            if (currentMission != null)
-              ForgeCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currentMission.numberLabel,
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.logicCyan,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.micro),
-                    Text(
-                      currentMission.title,
-                      style: AppTypography.headline.copyWith(
-                        color: Colors.white,
-                        fontSize: 24.0,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.small),
-                    Text(
-                      currentMission.description,
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.syntaxGrey,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.large),
-
-                    // Progress Indicator
-                    Row(
-                      children: [
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: 0.5, // Placeholder progress
-                            backgroundColor: AppColors.obsidian,
-                            color: AppColors.forgeEmber,
-                            minHeight: 8.0,
-                            borderRadius: BorderRadius.circular(
-                              AppRadius.small,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.medium),
-                        Text(
-                          '50%',
-                          style: AppTypography.code.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.large),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ForgeButton(
-                        label: 'Continue',
-                        onPressed: () =>
-                            context.push('/mission', extra: currentMission),
-                      ),
-                    ),
-                  ],
+            // Render the dynamically loaded vertical list of missions
+            if (missions.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.large),
+                  child: CircularProgressIndicator(color: AppColors.forgeEmber),
                 ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: missions.length,
+                itemBuilder: (context, index) {
+                  return _MissionListCard(mission: missions[index]);
+                },
               ),
-            const SizedBox(height: AppSpacing.massive),
 
-            // Coming Soon Section
-            Text(
-              'Coming Soon',
-              style: AppTypography.title.copyWith(color: Colors.white),
-            ),
-            const SizedBox(height: AppSpacing.medium),
-            const _DisabledFeatureCard(title: 'AI Mentor'),
-            const SizedBox(height: AppSpacing.small),
-            const _DisabledFeatureCard(title: 'Developer Journal'),
-            const SizedBox(height: AppSpacing.small),
-            const _DisabledFeatureCard(title: 'Projects'),
-            const SizedBox(height: AppSpacing.large),
+            const SizedBox(height: AppSpacing.massive),
           ],
         ),
       ),
@@ -172,33 +110,82 @@ class _StatWidget extends StatelessWidget {
   }
 }
 
-/// Reusable disabled card for future features.
-class _DisabledFeatureCard extends StatelessWidget {
-  final String title;
+/// A dedicated Forge card for displaying individual missions in a vertical list.
+class _MissionListCard extends StatelessWidget {
+  final Mission mission;
 
-  const _DisabledFeatureCard({required this.title});
+  const _MissionListCard({required this.mission});
 
   @override
   Widget build(BuildContext context) {
-    return ForgeCard(
-      backgroundColor: AppColors.obsidian,
-      borderColor: AppColors.syntaxGrey.withOpacity(0.3),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.lock_outline,
-            color: AppColors.syntaxGrey,
-            size: 20.0,
-          ),
-          const SizedBox(width: AppSpacing.medium),
-          Text(
-            title,
-            style: AppTypography.body.copyWith(
-              color: AppColors.syntaxGrey,
-              fontWeight: FontWeight.w600,
+    final bool isUnlocked = mission.isUnlocked;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+      child: Opacity(
+        opacity: isUnlocked ? 1.0 : 0.6,
+        child: InkWell(
+          onTap: isUnlocked
+              ? () => context.push('/mission', extra: mission)
+              : null,
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          // We wrap the card in InkWell to provide native material ripple feedback
+          // when tapping an unlocked mission.
+          child: ForgeCard(
+            backgroundColor: AppColors.obsidian,
+            borderColor: isUnlocked
+                ? AppColors.forgeEmber.withOpacity(0.5)
+                : AppColors.syntaxGrey.withOpacity(0.3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mission.numberLabel.toUpperCase(),
+                        style: AppTypography.body.copyWith(
+                          color: isUnlocked
+                              ? AppColors.logicCyan
+                              : AppColors.syntaxGrey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.0,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.micro),
+                      Text(
+                        mission.title,
+                        style: AppTypography.headline.copyWith(
+                          color: Colors.white,
+                          fontSize: 18.0,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.micro),
+                      Text(
+                        mission.description,
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.syntaxGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.medium),
+                if (!isUnlocked)
+                  const Icon(
+                    Icons.lock_outline,
+                    color: AppColors.syntaxGrey,
+                  )
+                else
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.logicCyan,
+                  ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

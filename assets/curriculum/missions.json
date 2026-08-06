@@ -1,0 +1,25 @@
+[
+  {
+    "id": "mission_1",
+    "numberLabel": "Mission 1",
+    "title": "Hello, Python",
+    "description": "Learn what Python is and print your first line of code.",
+    "objective": "Print \"Hello, World!\"",
+    "validAnswers": [
+      "print(\"Hello, World!\")",
+      "print('Hello, World!')"
+    ],
+    "isUnlocked": true
+  },
+  {
+    "id": "mission_2",
+    "numberLabel": "Mission 2",
+    "title": "The Pirate Bounty",
+    "description": "Iterate through the array and calculate the total berry bounty of the Straw Hat crew.",
+    "objective": "Sum the integers in the provided list.",
+    "validAnswers": [
+      "sum(bounties)"
+    ],
+    "isUnlocked": false
+  }
+]

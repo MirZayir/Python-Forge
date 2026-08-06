@@ -6,6 +6,7 @@ class Mission {
   final String description;
   final String objective;
   final List<String> validAnswers;
+  final bool isUnlocked;
 
   const Mission({
     required this.id,
@@ -14,6 +15,7 @@ class Mission {
     required this.description,
     required this.objective,
     required this.validAnswers,
+    this.isUnlocked = false, // Defaults to false to enforce the DAG progression
   });
 
   /// Validates whether a provided string matches any acceptable answer for this mission.
