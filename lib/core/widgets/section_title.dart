@@ -46,7 +46,9 @@ class SectionTitle extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing != null) trailing!,
+        // Fixes the linter warning by using the null-coalescing operator
+        // instead of an if-statement inside the collection.
+        trailing ?? const SizedBox.shrink(),
       ],
     );
   }
