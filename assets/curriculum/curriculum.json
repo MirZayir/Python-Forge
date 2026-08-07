@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "title": "Python Forge Version 1 Curriculum Architecture",
+  "description": "Scalable modular curriculum hierarchy designed for mobile-first interactive Python learning.",
+  "modules": [
+    {
+      "moduleId": "mod_01_foundations",
+      "title": "Python Foundations",
+      "description": "Master the absolute basics of executing code, handling standard input/output, and defining basic state with variables.",
+      "order": 1,
+      "estimatedHours": 3.5,
+      "missions": [
+        {
+          "id": "mission_01",
+          "title": "Hello World",
+          "description": "Every programmer starts here. Forge your very first instruction to print text to the console.",
+          "objective": "Print exactly \"Hello, World!\" to the console.",
+          "difficulty": "beginner",
+          "prerequisites": [],
+          "starterCode": "print(\"...\")",
+          "expectedConcepts": [
+            "syntax",
+            "functions",
+            "strings",
+            "standard_output"
+          ],
+          "validationRules": {
+            "type": "exact_match",
+            "validAnswers": [
+              "print(\"Hello, World!\")",
+              "print('Hello, World!')"
+            ],
+            "ignoreWhitespace": true
+          },
+          "hints": [
+            "Use the print() function.",
+            "Text strings in Python must be enclosed in quotation marks."
+          ]
+        },
+        {
+          "id": "mission_02",
+          "title": "Variables",
+          "description": "Variables act as containers to store data values. Let's assign a value and display it.",
+          "objective": "Create a variable named message, assign \"Python Forge\" to it, then print it.",
+          "difficulty": "beginner",
+          "prerequisites": [
+            "mission_01"
+          ],
+          "starterCode": "# Create your variable below\n",
+          "expectedConcepts": [
+            "variables",
+            "assignment",
+            "naming_conventions"
+          ],
+          "validationRules": {
+            "type": "exact_match",
+            "validAnswers": [
+              "message = \"Python Forge\"\nprint(message)",
+              "message = 'Python Forge'\nprint(message)"
+            ],
+            "ignoreWhitespace": true
+          },
+          "hints": [
+            "Use the = operator to assign a value to a variable.",
+            "Make sure to pass the variable name directly to the print() function without using quotation marks."
+          ]
+        }
+      ]
+    }
+  ]
+}

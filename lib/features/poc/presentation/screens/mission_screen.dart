@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/execution/execution_manager.dart';
+import '../../../../core/progression/progress_manager.dart';
 import '../../../../core/progression/xp_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -15,7 +15,7 @@ import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (XP Manager Integration).
+/// Milestone 1 - Phase 1: Editor Skeleton (Progress Manager Integration).
 /// A structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -31,6 +31,7 @@ class _MissionScreenState extends State<MissionScreen> {
   late final FocusNode _editorFocusNode;
 
   final ExecutionManager _executionManager = ExecutionManager();
+  final ProgressManager _progressManager = ProgressManager();
 
   String _outputText = 'Ready to execute...';
   bool _isRunning = false;
@@ -88,18 +89,8 @@ class _MissionScreenState extends State<MissionScreen> {
     });
 
     if (isCorrect) {
-      // Persist completion state locally
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(
-          'mission_${widget.mission.numberLabel}_completed', true);
-
-      // Automatically unlock the next mission
-      final currentMissionNum = int.tryParse(widget.mission.numberLabel) ?? 1;
-      final maxUnlocked = prefs.getInt('max_unlocked_mission') ?? 1;
-
-      if (currentMissionNum >= maxUnlocked) {
-        await prefs.setInt('max_unlocked_mission', currentMissionNum + 1);
-      }
+      // Persist completion state through the centralized ProgressManager
+      await _progressManager.completeMission(widget.mission.id);
 
       if (!mounted) return;
       _showCompletionDialog();
