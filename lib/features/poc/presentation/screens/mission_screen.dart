@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -11,7 +12,7 @@ import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Refactored CodeEditorWidget).
+/// Milestone 1 - Phase 1: Editor Skeleton (Persistent Mission Progress).
 /// A structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -59,11 +60,11 @@ class _MissionScreenState extends State<MissionScreen> {
 
     setState(() {
       _isRunning = true;
-      _outputText = 'Running...';
+      _outputText = '> Running...';
     });
 
     // Simulate execution delay for UX
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 400));
 
     if (!mounted) return;
 
@@ -78,6 +79,92 @@ class _MissionScreenState extends State<MissionScreen> {
         _outputText = '❌ Not quite.\nTry again.';
       }
     });
+
+    if (isCorrect) {
+      // Persist completion state locally
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(
+          'mission_${widget.mission.numberLabel}_completed', true);
+
+      // Automatically unlock the next mission
+      final currentMissionNum = int.tryParse(widget.mission.numberLabel) ?? 1;
+      final maxUnlocked = prefs.getInt('max_unlocked_mission') ?? 1;
+
+      if (currentMissionNum >= maxUnlocked) {
+        await prefs.setInt('max_unlocked_mission', currentMissionNum + 1);
+      }
+
+      if (!mounted) return;
+      _showCompletionDialog();
+    }
+  }
+
+  void _showCompletionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: AppColors.obsidian,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            side: BorderSide(
+              color: AppColors.forgeEmber.withOpacity(0.5),
+              width: 1.0,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.large),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '🎉 Mission Complete!',
+                  style: AppTypography.title.copyWith(color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.medium),
+                Text(
+                  'You wrote your first Python program.',
+                  style:
+                      AppTypography.body.copyWith(color: AppColors.syntaxGrey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.large),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.large,
+                    vertical: AppSpacing.small,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.temperGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.small),
+                    border: Border.all(
+                      color: AppColors.temperGreen.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Text(
+                    '+25 XP',
+                    style: AppTypography.code.copyWith(
+                      color: AppColors.temperGreen,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18.0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.large),
+                ForgeButton(
+                  label: 'Continue',
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -142,28 +229,53 @@ class _MissionScreenState extends State<MissionScreen> {
                   width: 1.0,
                 ),
               ),
-              padding: const EdgeInsets.all(AppSpacing.medium),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Output',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.syntaxGrey,
-                      fontWeight: FontWeight.bold,
+                  // Console Header
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: AppSpacing.medium,
+                      top: AppSpacing.medium,
+                      right: AppSpacing.medium,
+                      bottom: AppSpacing.small,
+                    ),
+                    child: Text(
+                      'OUTPUT',
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.syntaxGrey,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.small),
+                  // Header Divider
+                  Divider(
+                    height: 1.0,
+                    thickness: 1.0,
+                    color: AppColors.syntaxGrey.withOpacity(0.3),
+                  ),
+                  // Console Text Area
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        _outputText,
-                        style: AppTypography.code.copyWith(
-                          color: _outputText.startsWith('❌')
-                              ? AppColors.slagRed
-                              : (_outputText.startsWith('✅')
-                                  ? AppColors.temperGreen
-                                  : Colors.white),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.medium),
+                      child: SingleChildScrollView(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Align(
+                            key: ValueKey<String>(_outputText),
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              _outputText,
+                              style: AppTypography.code.copyWith(
+                                color: _outputText.startsWith('❌')
+                                    ? AppColors.slagRed
+                                    : (_outputText.startsWith('✅')
+                                        ? AppColors.temperGreen
+                                        : AppColors.syntaxGrey),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
