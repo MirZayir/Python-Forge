@@ -27,6 +27,7 @@ class Mission {
   final String numberLabel;
   final String title;
   final String description;
+  final String concept;
   final String objective;
   final String difficulty;
   final List<String> prerequisites;
@@ -40,6 +41,7 @@ class Mission {
     required this.numberLabel,
     required this.title,
     required this.description,
+    required this.concept,
     required this.objective,
     required this.difficulty,
     required this.prerequisites,
@@ -56,6 +58,7 @@ class Mission {
       numberLabel: numberLabel,
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
+      concept: json['concept'] as String? ?? '',
       objective: json['objective'] as String? ?? '',
       difficulty: json['difficulty'] as String? ?? 'beginner',
       prerequisites: (json['prerequisites'] as List<dynamic>?)

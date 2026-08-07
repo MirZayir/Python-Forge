@@ -23,8 +23,22 @@ class ExecutionManager {
 
       // Variable assignment
       final assignment = RegExp(
-        r"""^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*['"](.*)['"]$""",
+        r"""^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$""",
       ).firstMatch(line);
+
+      if (assignment != null) {
+        final variableName = assignment.group(1)!;
+        var value = assignment.group(2)!.trim();
+
+        // Remove surrounding quotes if present
+        if ((value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.substring(1, value.length - 1);
+        }
+
+        variables[variableName] = value;
+        continue;
+      }
 
       if (assignment != null) {
         variables[assignment.group(1)!] = assignment.group(2)!;
