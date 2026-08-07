@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/execution/execution_manager.dart';
+import '../../../../core/progression/achievement_engine.dart';
 import '../../../../core/progression/progress_manager.dart';
 import '../../../../core/progression/xp_manager.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -15,7 +16,7 @@ import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Progress Manager Integration).
+/// Milestone 1 - Phase 1: Editor Skeleton (Achievement Engine Integration).
 /// A structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -32,6 +33,7 @@ class _MissionScreenState extends State<MissionScreen> {
 
   final ExecutionManager _executionManager = ExecutionManager();
   final ProgressManager _progressManager = ProgressManager();
+  final AchievementEngine _achievementEngine = AchievementEngine();
 
   String _outputText = 'Ready to execute...';
   bool _isRunning = false;
@@ -92,8 +94,37 @@ class _MissionScreenState extends State<MissionScreen> {
       // Persist completion state through the centralized ProgressManager
       await _progressManager.completeMission(widget.mission.id);
 
+      // Evaluate and fetch any newly unlocked achievements
+      final newlyUnlocked = await _achievementEngine.evaluateAndUnlock();
+
       if (!mounted) return;
+
       _showCompletionDialog();
+
+      // Display a SnackBar for each newly unlocked achievement
+      for (final achievement in newlyUnlocked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '🏆 Achievement Unlocked!\n${achievement.title}',
+              style: AppTypography.body.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: AppColors.obsidian,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              side: BorderSide(
+                color: AppColors.temperGreen.withOpacity(0.5),
+                width: 1.0,
+              ),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
