@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -10,7 +11,7 @@ import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Simulated Execution).
+/// Milestone 1 - Phase 1: Editor Skeleton (Native MethodChannel).
 /// A structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -23,6 +24,8 @@ class MissionScreen extends StatefulWidget {
 
 class _MissionScreenState extends State<MissionScreen> {
   late final TextEditingController _codeController;
+  static const platform = MethodChannel('python_forge/native');
+
   String _outputText = 'Ready to execute...';
   bool _isRunning = false;
 
@@ -47,15 +50,25 @@ class _MissionScreenState extends State<MissionScreen> {
       _outputText = 'Running...';
     });
 
-    // Simulate code execution delay
-    await Future.delayed(const Duration(milliseconds: 700));
+    try {
+      // Invoke the native MethodChannel
+      final String result = await platform.invokeMethod('getNativeMessage');
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _isRunning = false;
-      _outputText = 'Hello, World!\n\nExecution completed successfully.';
-    });
+      setState(() {
+        _isRunning = false;
+        _outputText = result;
+      });
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isRunning = false;
+        _outputText =
+            "Failed to communicate with native layer: '${e.message}'.";
+      });
+    }
   }
 
   @override
