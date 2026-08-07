@@ -16,8 +16,8 @@ import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Achievement Engine Integration).
-/// A structural UI layout for the interactive learning environment.
+/// Milestone 1 - Phase 1: Editor Skeleton (Responsive Mission Editor & Keyboard Experience).
+/// A robust structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
 
@@ -41,7 +41,7 @@ class _MissionScreenState extends State<MissionScreen> {
   @override
   void initState() {
     super.initState();
-    _codeController = TextEditingController(text: 'print("Hello, World!")');
+    _codeController = TextEditingController(text: widget.mission.starterCode);
     _editorFocusNode = FocusNode();
 
     _editorFocusNode.addListener(_onFocusChanged);
@@ -128,8 +128,62 @@ class _MissionScreenState extends State<MissionScreen> {
     }
   }
 
-  void _showCompletionDialog() {
+  void _showHint() {
+    if (widget.mission.hints.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: AppColors.obsidian,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            side: BorderSide(
+              color: AppColors.logicCyan.withOpacity(0.5),
+              width: 1.0,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.large),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lightbulb, color: AppColors.forgeEmber),
+                    const SizedBox(width: AppSpacing.small),
+                    Text(
+                      'Mission Hint',
+                      style: AppTypography.title.copyWith(color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.medium),
+                Text(
+                  widget.mission.hints.first,
+                  style:
+                      AppTypography.body.copyWith(color: AppColors.syntaxGrey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.large),
+                ForgeButton(
+                  label: 'Got it',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCompletionDialog() async {
     final xpReward = XpManager.rewardFor(widget.mission);
+    final completed = await _progressManager.completedMissionCount();
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -140,8 +194,8 @@ class _MissionScreenState extends State<MissionScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.medium),
             side: BorderSide(
-              color: AppColors.forgeEmber.withOpacity(0.5),
-              width: 1.0,
+              color: AppColors.forgeEmber.withValues(alpha: 0.5),
+              width: 1,
             ),
           ),
           child: Padding(
@@ -149,45 +203,100 @@ class _MissionScreenState extends State<MissionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '🎉 Mission Complete!',
-                  style: AppTypography.title.copyWith(color: Colors.white),
-                  textAlign: TextAlign.center,
+                const Icon(
+                  Icons.emoji_events,
+                  color: AppColors.forgeEmber,
+                  size: 60,
                 ),
                 const SizedBox(height: AppSpacing.medium),
                 Text(
-                  'You wrote your first Python program.',
-                  style:
-                      AppTypography.body.copyWith(color: AppColors.syntaxGrey),
+                  'Mission Complete!',
+                  style: AppTypography.title.copyWith(
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.small),
+                Text(
+                  'Excellent work! Keep forging ahead.',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.syntaxGrey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.large),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.large,
-                    vertical: AppSpacing.small,
-                  ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.medium),
                   decoration: BoxDecoration(
-                    color: AppColors.temperGreen.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.small),
+                    color: AppColors.temperGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.medium),
                     border: Border.all(
-                      color: AppColors.temperGreen.withOpacity(0.5),
+                      color: AppColors.temperGreen.withValues(alpha: 0.4),
                     ),
                   ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '+$xpReward XP',
+                        style: AppTypography.title.copyWith(
+                          color: AppColors.temperGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.small),
+                      Text(
+                        '$completed Mission${completed == 1 ? '' : 's'} Completed',
+                        style: AppTypography.body.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.large),
+                Align(
+                  alignment: Alignment.centerLeft,
                   child: Text(
-                    '+$xpReward XP',
-                    style: AppTypography.code.copyWith(
-                      color: AppColors.temperGreen,
+                    'Overall Progress',
+                    style: AppTypography.body.copyWith(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18.0,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.small),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.small),
+                  child: LinearProgressIndicator(
+                    value: completed / 15,
+                    minHeight: 10,
+                    backgroundColor:
+                        AppColors.syntaxGrey.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.temperGreen,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.small),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '$completed / 15 Missions',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.syntaxGrey,
                     ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.large),
                 ForgeButton(
-                  label: 'Continue',
+                  label: completed >= 15 ? 'Finish Module' : 'Continue',
                   onPressed: () {
                     Navigator.of(context).pop();
+
+                    if (mounted) {
+                      context.pop(true);
+                    }
                   },
                 ),
               ],
@@ -214,125 +323,187 @@ class _MissionScreenState extends State<MissionScreen> {
         ),
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Mission Objective
-          ForgeCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Objective',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.logicCyan,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.micro),
-                Text(
-                  widget.mission.objective,
-                  style: AppTypography.body.copyWith(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.medium),
-
-          // Code Editor Container
+          // Main Scrollable Editor Area
           Expanded(
-            flex: 3,
-            child: CodeEditorWidget(
-              controller: _codeController,
-              focusNode: _editorFocusNode,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.medium),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final availableHeight = constraints.maxHeight;
 
-          // Output Console Container
-          Expanded(
-            flex: 2,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.obsidian,
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-                border: Border.all(
-                  color: AppColors.syntaxGrey.withOpacity(0.3),
-                  width: 1.0,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Console Header
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: AppSpacing.medium,
-                      top: AppSpacing.medium,
-                      right: AppSpacing.medium,
-                      bottom: AppSpacing.small,
-                    ),
-                    child: Text(
-                      'OUTPUT',
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.syntaxGrey,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  // Header Divider
-                  Divider(
-                    height: 1.0,
-                    thickness: 1.0,
-                    color: AppColors.syntaxGrey.withOpacity(0.3),
-                  ),
-                  // Console Text Area
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.medium),
-                      child: SingleChildScrollView(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          child: Align(
-                            key: ValueKey<String>(_outputText),
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              _outputText,
-                              style: AppTypography.code.copyWith(
-                                color: _outputText.contains('❌')
-                                    ? AppColors.slagRed
-                                    : (_outputText.contains('✅')
-                                        ? AppColors.temperGreen
-                                        : AppColors.syntaxGrey),
+                // Approximate height of static elements (Objective Card, Buttons, Spacings)
+                const fixedElementsHeight = 260.0;
+
+                // Determine remaining height to distribute to the Editor and Output Console.
+                double remainingHeight = availableHeight - fixedElementsHeight;
+
+                // Enforce a minimum height threshold to ensure the UI initiates scrolling
+                // gracefully when the keyboard ascends rather than compressing code blocks to zero.
+                if (remainingHeight < 250.0) {
+                  remainingHeight = 250.0;
+                }
+
+                // Apportion 60% of flexible space to the editor, 40% to the console
+                final editorHeight = remainingHeight * 0.6;
+                final outputHeight = remainingHeight * 0.4;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.medium),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Mission Objective
+                      ForgeCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Objective',
+                              style: AppTypography.body.copyWith(
+                                color: AppColors.logicCyan,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(height: AppSpacing.micro),
+                            Text(
+                              widget.mission.objective,
+                              style: AppTypography.body
+                                  .copyWith(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+
+                      // Code Editor Container
+                      SizedBox(
+                        height: editorHeight,
+                        child: CodeEditorWidget(
+                          controller: _codeController,
+                          focusNode: _editorFocusNode,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+
+                      // Output Console Container
+                      SizedBox(
+                        height: outputHeight,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.obsidian,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.medium),
+                            border: Border.all(
+                              color: AppColors.syntaxGrey.withOpacity(0.3),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Console Header
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: AppSpacing.medium,
+                                  top: AppSpacing.medium,
+                                  right: AppSpacing.medium,
+                                  bottom: AppSpacing.small,
+                                ),
+                                child: Text(
+                                  'OUTPUT',
+                                  style: AppTypography.body.copyWith(
+                                    color: AppColors.syntaxGrey,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                              // Header Divider
+                              Divider(
+                                height: 1.0,
+                                thickness: 1.0,
+                                color: AppColors.syntaxGrey.withOpacity(0.3),
+                              ),
+                              // Console Text Area
+                              Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.all(AppSpacing.medium),
+                                  child: SingleChildScrollView(
+                                    child: AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      child: Align(
+                                        key: ValueKey<String>(_outputText),
+                                        alignment: Alignment.topLeft,
+                                        child: Text(
+                                          _outputText,
+                                          style: AppTypography.code.copyWith(
+                                            color: _outputText.contains('❌')
+                                                ? AppColors.slagRed
+                                                : (_outputText.contains('✅')
+                                                    ? AppColors.temperGreen
+                                                    : AppColors.syntaxGrey),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: AppSpacing.large),
+
+                      // Action Buttons
+                      Row(
+                        children: [
+                          if (widget.mission.hints.isNotEmpty) ...[
+                            Expanded(
+                              flex: 1,
+                              child: ForgeButton(
+                                label: 'Hint',
+                                icon: const Icon(
+                                  Icons.lightbulb_outline,
+                                  color: AppColors.obsidian,
+                                ),
+                                onPressed: _showHint,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.medium),
+                          ],
+                          Expanded(
+                            flex: 2,
+                            child: ForgeButton(
+                              label: _isRunning ? 'Running...' : 'Run Code',
+                              icon: _isRunning
+                                  ? null
+                                  : const Icon(
+                                      Icons.play_arrow_rounded,
+                                      color: AppColors.obsidian,
+                                    ),
+                              onPressed: _isRunning ? null : _runCode,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
-          const SizedBox(height: AppSpacing.large),
 
-          // Primary Run Button
-          ForgeButton(
-            label: _isRunning ? 'Running...' : 'Run Code',
-            icon: _isRunning
-                ? null
-                : const Icon(
-                    Icons.play_arrow_rounded,
-                    color: AppColors.obsidian,
-                  ),
-            onPressed: _isRunning ? null : _runCode,
-          ),
-
-          // Render the accessory bar whenever the editor is focused
+          // Pinned Accessory Bar
+          // Appears immediately above the keyboard for instant access, uncoupled from scroll offsets
           if (_editorFocusNode.hasFocus)
             Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.medium),
+              padding: const EdgeInsets.only(
+                left: AppSpacing.medium,
+                right: AppSpacing.medium,
+                bottom: AppSpacing.medium,
+              ),
               child: CodeEditorAccessoryBar(controller: _codeController),
             ),
         ],

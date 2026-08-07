@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
+import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../data/repositories/curriculum_repository.dart';
 import '../../domain/models/curriculum.dart';
 import 'module_screen.dart';
@@ -80,6 +81,18 @@ class _HomeScreenState extends State<HomeScreen> {
           'Python Forge',
           style: AppTypography.title.copyWith(color: Colors.white),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _buildBody(),
     );

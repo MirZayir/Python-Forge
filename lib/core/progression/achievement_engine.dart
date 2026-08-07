@@ -35,6 +35,14 @@ class AchievementEngine {
 
   final ProgressManager _progressManager = ProgressManager();
 
+  /// Retrieves a list of achievements that have already been unlocked.
+  Future<List<Achievement>> getUnlockedAchievements() async {
+    final prefs = await SharedPreferences.getInstance();
+    final unlockedIds = prefs.getStringList('unlocked_achievements') ?? [];
+
+    return _achievements.where((a) => unlockedIds.contains(a.id)).toList();
+  }
+
   /// Evaluates all locked achievements against current progress metrics.
   /// Returns a list of newly unlocked achievements during this execution.
   Future<List<Achievement>> evaluateAndUnlock() async {
