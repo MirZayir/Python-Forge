@@ -134,8 +134,8 @@ class _MissionListCard extends StatelessWidget {
           child: ForgeCard(
             backgroundColor: AppColors.obsidian,
             borderColor: isUnlocked
-                ? AppColors.forgeEmber.withOpacity(0.5)
-                : AppColors.syntaxGrey.withOpacity(0.3),
+                ? AppColors.forgeEmber.withValues(alpha: 0.5)
+                : AppColors.syntaxGrey.withValues(alpha: 0.3),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

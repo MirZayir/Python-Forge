@@ -6,8 +6,7 @@ class HomeScreen extends StatelessWidget {
   final bool isLoading;
   final dynamic currentMission; // Preserved existing mission state
 
-  const HomeScreen({Key? key, this.isLoading = false, this.currentMission})
-    : super(key: key);
+  const HomeScreen({super.key, this.isLoading = false, this.currentMission});
 
   @override
   Widget build(BuildContext context) {
