@@ -86,7 +86,7 @@ class _CodeEditorWidgetState extends State<CodeEditorWidget> {
         color: AppColors.crucibleGrey,
         borderRadius: BorderRadius.circular(AppRadius.medium),
         border: Border.all(
-          color: AppColors.syntaxGrey.withOpacity(0.3),
+          color: AppColors.syntaxGrey.withValues(alpha: 0.3),
           width: 1.0,
         ),
       ),
@@ -113,7 +113,7 @@ class _CodeEditorWidgetState extends State<CodeEditorWidget> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isCurrent
-                          ? AppColors.obsidian.withOpacity(0.3)
+                          ? AppColors.obsidian.withValues(alpha: 0.3)
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(
@@ -140,7 +140,7 @@ class _CodeEditorWidgetState extends State<CodeEditorWidget> {
                     child: Container(
                       height: 24.0,
                       color: isCurrent
-                          ? AppColors.forgeEmber.withOpacity(0.1)
+                          ? AppColors.forgeEmber.withValues(alpha: 0.1)
                           : Colors.transparent,
                     ),
                   ),

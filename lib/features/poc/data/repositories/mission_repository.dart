@@ -25,16 +25,12 @@ class LocalMissionRepository implements MissionRepository {
 
       final List<dynamic> jsonList = jsonDecode(jsonString) as List<dynamic>;
 
-      _cachedMissions = jsonList.map((dynamic jsonMap) {
-        final map = jsonMap as Map<String, dynamic>;
-        return Mission(
-          id: map['id'] as String,
-          numberLabel: map['numberLabel'] as String,
-          title: map['title'] as String,
-          description: map['description'] as String,
-          objective: map['objective'] as String,
-          validAnswers: List<String>.from(map['validAnswers'] as List),
-          isUnlocked: map['isUnlocked'] as bool? ?? false,
+      _cachedMissions = jsonList.asMap().entries.map((entry) {
+        final map = entry.value as Map<String, dynamic>;
+
+        return Mission.fromJson(
+          map,
+          numberLabel: 'Mission ${entry.key + 1}',
         );
       }).toList();
 

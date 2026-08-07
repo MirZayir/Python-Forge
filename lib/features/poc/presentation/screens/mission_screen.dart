@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/execution/execution_manager.dart';
+import '../../../../core/progression/xp_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/validation/answer_validator.dart';
 import '../../../../core/widgets/code_editor_widget.dart';
 import '../../../../core/widgets/forge_button.dart';
 import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Persistent Mission Progress).
+/// Milestone 1 - Phase 1: Editor Skeleton (XP Manager Integration).
 /// A structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -26,6 +29,8 @@ class MissionScreen extends StatefulWidget {
 class _MissionScreenState extends State<MissionScreen> {
   late final TextEditingController _codeController;
   late final FocusNode _editorFocusNode;
+
+  final ExecutionManager _executionManager = ExecutionManager();
 
   String _outputText = 'Ready to execute...';
   bool _isRunning = false;
@@ -63,20 +68,22 @@ class _MissionScreenState extends State<MissionScreen> {
       _outputText = '> Running...';
     });
 
-    // Simulate execution delay for UX
-    await Future.delayed(const Duration(milliseconds: 400));
+    // Delegate execution to the ExecutionManager
+    final executionResult =
+        await _executionManager.execute(_codeController.text);
 
     if (!mounted) return;
 
-    // Validate the user's code against the mission's valid answers
-    final isCorrect = widget.mission.validateAnswer(_codeController.text);
+    // Validate the user's code using the centralized AnswerValidator
+    final isCorrect =
+        AnswerValidator.validate(_codeController.text, widget.mission);
 
     setState(() {
       _isRunning = false;
       if (isCorrect) {
-        _outputText = '✅ Mission Complete!';
+        _outputText = '${executionResult.output}\n\n✅ Mission Complete!';
       } else {
-        _outputText = '❌ Not quite.\nTry again.';
+        _outputText = '${executionResult.output}\n\n❌ Not quite.\nTry again.';
       }
     });
 
@@ -100,6 +107,8 @@ class _MissionScreenState extends State<MissionScreen> {
   }
 
   void _showCompletionDialog() {
+    final xpReward = XpManager.rewardFor(widget.mission);
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -144,7 +153,7 @@ class _MissionScreenState extends State<MissionScreen> {
                     ),
                   ),
                   child: Text(
-                    '+25 XP',
+                    '+$xpReward XP',
                     style: AppTypography.code.copyWith(
                       color: AppColors.temperGreen,
                       fontWeight: FontWeight.bold,
@@ -268,9 +277,9 @@ class _MissionScreenState extends State<MissionScreen> {
                             child: Text(
                               _outputText,
                               style: AppTypography.code.copyWith(
-                                color: _outputText.startsWith('❌')
+                                color: _outputText.contains('❌')
                                     ? AppColors.slagRed
-                                    : (_outputText.startsWith('✅')
+                                    : (_outputText.contains('✅')
                                         ? AppColors.temperGreen
                                         : AppColors.syntaxGrey),
                               ),
