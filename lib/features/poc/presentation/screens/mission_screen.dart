@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/code_editor_widget.dart';
 import '../../../../core/widgets/forge_button.dart';
 import '../../../../core/widgets/forge_card.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Line Number Gutter).
+/// Milestone 1 - Phase 1: Editor Skeleton (Refactored CodeEditorWidget).
 /// A structural UI layout for the interactive learning environment.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -24,97 +24,60 @@ class MissionScreen extends StatefulWidget {
 
 class _MissionScreenState extends State<MissionScreen> {
   late final TextEditingController _codeController;
-  late final ScrollController _editorScrollController;
-  late final ScrollController _gutterScrollController;
-
-  static const platform = MethodChannel('python_forge/native');
+  late final FocusNode _editorFocusNode;
 
   String _outputText = 'Ready to execute...';
   bool _isRunning = false;
-
-  int _lineCount = 1;
-  int _currentLine = 1;
 
   @override
   void initState() {
     super.initState();
     _codeController = TextEditingController(text: 'print("Hello, World!")');
-    _editorScrollController = ScrollController();
-    _gutterScrollController = ScrollController();
+    _editorFocusNode = FocusNode();
 
-    _codeController.addListener(_onTextChanged);
-    _editorScrollController.addListener(_syncScroll);
-
-    // Initialize line count and active line
-    _onTextChanged();
+    _editorFocusNode.addListener(_onFocusChanged);
   }
 
   @override
   void dispose() {
-    _codeController.removeListener(_onTextChanged);
-    _editorScrollController.removeListener(_syncScroll);
-
+    _editorFocusNode.removeListener(_onFocusChanged);
     _codeController.dispose();
-    _editorScrollController.dispose();
-    _gutterScrollController.dispose();
+    _editorFocusNode.dispose();
     super.dispose();
   }
 
-  void _syncScroll() {
-    if (_editorScrollController.hasClients &&
-        _gutterScrollController.hasClients) {
-      _gutterScrollController.jumpTo(_editorScrollController.offset);
-    }
-  }
-
-  void _onTextChanged() {
-    final text = _codeController.text;
-    final lines = '\n'.allMatches(text).length + 1;
-
-    final selection = _codeController.selection;
-    int current = 1;
-    if (selection.isValid &&
-        selection.baseOffset >= 0 &&
-        selection.baseOffset <= text.length) {
-      final textBeforeCursor = text.substring(0, selection.baseOffset);
-      current = '\n'.allMatches(textBeforeCursor).length + 1;
-    }
-
-    if (_lineCount != lines || _currentLine != current) {
-      setState(() {
-        _lineCount = lines;
-        _currentLine = current;
-      });
-    }
+  void _onFocusChanged() {
+    // Rebuild the UI to conditionally show/hide the accessory bar
+    setState(() {});
   }
 
   Future<void> _runCode() async {
     if (_isRunning) return;
+
+    // Remove focus to dismiss the keyboard and accessory bar during execution
+    _editorFocusNode.unfocus();
 
     setState(() {
       _isRunning = true;
       _outputText = 'Running...';
     });
 
-    try {
-      // Invoke the native MethodChannel
-      final String result = await platform.invokeMethod('getNativeMessage');
+    // Simulate execution delay for UX
+    await Future.delayed(const Duration(milliseconds: 600));
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      setState(() {
-        _isRunning = false;
-        _outputText = result;
-      });
-    } on PlatformException catch (e) {
-      if (!mounted) return;
+    // Validate the user's code against the mission's valid answers
+    final isCorrect = widget.mission.validateAnswer(_codeController.text);
 
-      setState(() {
-        _isRunning = false;
-        _outputText =
-            "Failed to communicate with native layer: '${e.message}'.";
-      });
-    }
+    setState(() {
+      _isRunning = false;
+      if (isCorrect) {
+        _outputText = '✅ Mission Complete!';
+      } else {
+        _outputText = '❌ Not quite.\nTry again.';
+      }
+    });
   }
 
   @override
@@ -160,91 +123,9 @@ class _MissionScreenState extends State<MissionScreen> {
           // Code Editor Container
           Expanded(
             flex: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.crucibleGrey,
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-                border: Border.all(
-                  color: AppColors.syntaxGrey.withOpacity(0.3),
-                  width: 1.0,
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.medium),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Line Number Gutter
-                  Container(
-                    width: 48.0,
-                    color: AppColors.crucibleGrey,
-                    child: ListView.builder(
-                      controller: _gutterScrollController,
-                      padding: EdgeInsets.zero,
-                      physics:
-                          const NeverScrollableScrollPhysics(), // Managed by _syncScroll
-                      itemCount: _lineCount,
-                      itemBuilder: (context, index) {
-                        final lineNumber = index + 1;
-                        final isCurrent = lineNumber == _currentLine;
-
-                        return Container(
-                          height: 24.0, // Fixed height per line
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: isCurrent
-                                ? AppColors.obsidian.withOpacity(0.3)
-                                : Colors.transparent,
-                            border: Border(
-                              left: BorderSide(
-                                color: isCurrent
-                                    ? AppColors.logicCyan
-                                    : Colors.transparent,
-                                width: 2.0,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            '$lineNumber',
-                            style: AppTypography.code.copyWith(
-                              color: isCurrent
-                                  ? AppColors.logicCyan
-                                  : AppColors.syntaxGrey,
-                              fontSize: 14.0,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.small),
-
-                  // Text Editor
-                  Expanded(
-                    child: TextField(
-                      controller: _codeController,
-                      scrollController: _editorScrollController,
-                      maxLines: null,
-                      expands: true,
-                      keyboardType: TextInputType.multiline,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      textCapitalization: TextCapitalization.none,
-                      style: AppTypography.code.copyWith(
-                        color: Colors.white,
-                        fontSize: 14.0,
-                        height: 24.0 /
-                            14.0, // Perfectly aligns with 24.0 height in gutter
-                      ),
-                      cursorColor: AppColors.forgeEmber,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding:
-                            EdgeInsets.only(right: AppSpacing.medium),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            child: CodeEditorWidget(
+              controller: _codeController,
+              focusNode: _editorFocusNode,
             ),
           ),
           const SizedBox(height: AppSpacing.medium),
@@ -278,7 +159,11 @@ class _MissionScreenState extends State<MissionScreen> {
                       child: Text(
                         _outputText,
                         style: AppTypography.code.copyWith(
-                          color: Colors.white,
+                          color: _outputText.startsWith('❌')
+                              ? AppColors.slagRed
+                              : (_outputText.startsWith('✅')
+                                  ? AppColors.temperGreen
+                                  : Colors.white),
                         ),
                       ),
                     ),
@@ -300,6 +185,13 @@ class _MissionScreenState extends State<MissionScreen> {
                   ),
             onPressed: _isRunning ? null : _runCode,
           ),
+
+          // Render the accessory bar whenever the editor is focused
+          if (_editorFocusNode.hasFocus)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.medium),
+              child: CodeEditorAccessoryBar(controller: _codeController),
+            ),
         ],
       ),
     );
