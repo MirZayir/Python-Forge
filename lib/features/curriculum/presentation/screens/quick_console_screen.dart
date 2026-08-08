@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/engine/python_runner.dart';
+import '../../../../core/services/settings_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
@@ -16,10 +17,12 @@ class QuickConsoleScreen extends StatefulWidget {
 class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
   late final TextEditingController _codeController;
   final LocalPythonInterpreter _interpreter = LocalPythonInterpreter();
+  final SettingsService _settingsService = SettingsService();
 
   String _outputText =
       '>>> Python REPL Ready\n>>> Enter code above and tap Exec.';
   bool _isRunning = false;
+  double _editorFontSize = 14.0;
 
   @override
   void initState() {
@@ -27,6 +30,16 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
     _codeController = TextEditingController(
         text:
             '# Interactive Python Playground\nprint("Hello from Quick Console!")');
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final fontSize = await _settingsService.getEditorFontSize();
+    if (mounted) {
+      setState(() {
+        _editorFontSize = fontSize;
+      });
+    }
   }
 
   @override
@@ -146,9 +159,9 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
                   TextField(
                     controller: _codeController,
                     maxLines: 7,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'monospace',
-                      fontSize: 14.0,
+                      fontSize: _editorFontSize,
                       color: AppColors.borderBlack,
                       height: 1.4,
                     ),
@@ -236,9 +249,9 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _outputText,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'monospace',
-                      fontSize: 13.0,
+                      fontSize: _editorFontSize - 1.0,
                       color: Colors.white,
                       height: 1.4,
                     ),
