@@ -1,25 +1,170 @@
 [
   {
-    "id": "mission_1",
-    "numberLabel": "Mission 1",
-    "title": "Hello, Python",
-    "description": "Learn what Python is and print your first line of code.",
-    "objective": "Print \"Hello, World!\"",
-    "validAnswers": [
-      "print(\"Hello, World!\")",
-      "print('Hello, World!')"
-    ],
-    "isUnlocked": true
+    "moduleId": "mod_1",
+    "title": "Python Foundations",
+    "description": "Learn the basic building blocks of Python including variables, strings, integers, and floats.",
+    "order": 1,
+    "estimatedHours": 1.0,
+    "missions": [
+      {
+        "id": "m1_1",
+        "title": "Hello World",
+        "description": "Every programmer starts here. Forge your very first instruction to print text to the console.",
+        "objective": "Print exactly \"Hello, World!\" to the console.",
+        "starterCode": "# Print your first output below",
+        "hints": [
+          "Use the print() function with double quotes around Hello, World!",
+          "Example: print(\"Hello, World!\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["print(\"Hello, World!\")", "print('Hello, World!')"]
+        }
+      },
+      {
+        "id": "m1_2",
+        "title": "Variables",
+        "description": "Variables act as containers to store data values. Let's assign a value and display it.",
+        "objective": "Create a variable named message, assign \"Python Forge\" to it, then print it.",
+        "starterCode": "# Create your variable below",
+        "hints": [
+          "Assign \"Python Forge\" to message using message = \"Python Forge\"",
+          "Then call print(message) on the next line."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["message = \"Python Forge\"\nprint(message)"]
+        }
+      },
+      {
+        "id": "m1_3",
+        "title": "Integers",
+        "description": "Learn how Python stores whole numbers using integer variables.",
+        "objective": "Create a variable named age with the value 18 and print it.",
+        "starterCode": "# Store your age below",
+        "hints": [
+          "Numbers do not need quotation marks.",
+          "Write: age = 18 followed by print(age)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["age = 18\nprint(age)"]
+        }
+      },
+      {
+        "id": "m1_4",
+        "title": "Floats",
+        "description": "Store decimal numbers using floating-point variables.",
+        "objective": "Create a variable named temperature with the value 36.5 and print it.",
+        "starterCode": "# Store temperature below",
+        "hints": [
+          "Float numbers use a decimal point.",
+          "Write: temperature = 36.5 followed by print(temperature)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["temperature = 36.5\nprint(temperature)"]
+        }
+      },
+      {
+        "id": "m1_5",
+        "title": "Strings",
+        "description": "Create text variables using string formatting.",
+        "objective": "Create a variable named city with the value \"Kashmir\" and print it.",
+        "starterCode": "# Store city name below",
+        "hints": [
+          "Strings must be wrapped in single or double quotes.",
+          "Write: city = \"Kashmir\" followed by print(city)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["city = \"Kashmir\"\nprint(city)"]
+        }
+      }
+    ]
   },
   {
-    "id": "mission_2",
-    "numberLabel": "Mission 2",
-    "title": "The Pirate Bounty",
-    "description": "Iterate through the array and calculate the total berry bounty of the Straw Hat crew.",
-    "objective": "Sum the integers in the provided list.",
-    "validAnswers": [
-      "sum(bounties)"
-    ],
-    "isUnlocked": false
+    "moduleId": "mod_2",
+    "title": "Control Flow & Decisions",
+    "description": "Master program logic using booleans, comparison operators, and if-elif-else conditional blocks.",
+    "order": 2,
+    "estimatedHours": 1.5,
+    "missions": [
+      {
+        "id": "m2_1",
+        "title": "Booleans",
+        "description": "Booleans represent truth values in Python: True or False.",
+        "objective": "Create a variable named is_active set to True and print it.",
+        "starterCode": "# Set boolean state below",
+        "hints": [
+          "In Python, True and False start with a capital letter.",
+          "Write: is_active = True followed by print(is_active)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["is_active = True\nprint(is_active)"]
+        }
+      },
+      {
+        "id": "m2_2",
+        "title": "The IF Statement",
+        "description": "Use if statements to execute code only when a condition is True.",
+        "objective": "Create a variable score = 85. Write an if statement checking if score > 50, and print \"Passed\".",
+        "starterCode": "# Check score condition below",
+        "hints": [
+          "Don't forget the colon (:) at the end of the if statement line and indent the print line.",
+          "Write:\nscore = 85\nif score > 50:\n    print(\"Passed\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["score = 85\nif score > 50:\n    print(\"Passed\")"]
+        }
+      },
+      {
+        "id": "m2_3",
+        "title": "Else Fallback",
+        "description": "Use else blocks to provide a fallback path when the condition is False.",
+        "objective": "Create age = 15. If age >= 18 print \"Adult\", else print \"Minor\".",
+        "starterCode": "# Add if-else branch below",
+        "hints": [
+          "Use else: on its own line after the if block.",
+          "Write:\nage = 15\nif age >= 18:\n    print(\"Adult\")\nelse:\n    print(\"Minor\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["age = 15\nif age >= 18:\n    print(\"Adult\")\nelse:\n    print(\"Minor\")"]
+        }
+      },
+      {
+        "id": "m2_4",
+        "title": "Elif Chains",
+        "description": "Chain multiple conditions together using elif (else if).",
+        "objective": "Create speed = 70. If speed > 80 print \"Fast\", elif speed > 50 print \"Normal\", else print \"Slow\".",
+        "starterCode": "# Build elif chain below",
+        "hints": [
+          "Chain elif speed > 50: between the if and else conditions.",
+          "Write:\nspeed = 70\nif speed > 80:\n    print(\"Fast\")\nelif speed > 50:\n    print(\"Normal\")\nelse:\n    print(\"Slow\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["speed = 70\nif speed > 80:\n    print(\"Fast\")\nelif speed > 50:\n    print(\"Normal\")\nelse:\n    print(\"Slow\")"]
+        }
+      },
+      {
+        "id": "m2_5",
+        "title": "Logical AND / OR",
+        "description": "Combine multiple conditions using the 'and' and 'or' keywords.",
+        "objective": "Create age = 20 and has_license = True. If age >= 18 and has_license print \"Drive\", else print \"No\".",
+        "starterCode": "# Combine conditions using and",
+        "hints": [
+          "Use the 'and' keyword to join age >= 18 and has_license.",
+          "Write:\nage = 20\nhas_license = True\nif age >= 18 and has_license:\n    print(\"Drive\")\nelse:\n    print(\"No\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["age = 20\nhas_license = True\nif age >= 18 and has_license:\n    print(\"Drive\")\nelse:\n    print(\"No\")"]
+        }
+      }
+    ]
   }
 ]

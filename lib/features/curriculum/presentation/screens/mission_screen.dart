@@ -116,20 +116,28 @@ class _MissionScreenState extends State<MissionScreen> {
 
     if (!mounted) return;
 
-    final isCorrect =
-        AnswerValidator.validate(_codeController.text, widget.mission);
+    final validationResult = AnswerValidator.validate(
+      fullCode: _codeController.text,
+      actualOutput: executionResult.output,
+      mission: widget.mission,
+    );
 
     setState(() {
       _isRunning = false;
-      if (isCorrect) {
-        _outputText = '${executionResult.output}\n\n✅ Mission Complete!';
-      } else {
+      if (executionResult.hasError) {
         _attemptCount++;
-        _outputText = '${executionResult.output}\n\n❌ Not quite.\nTry again.';
+        _outputText =
+            '${executionResult.output}\n\n❌ Runtime Error.\nTry again.';
+      } else {
+        _outputText =
+            '${executionResult.output}\n\n${validationResult.message}';
+        if (validationResult.status != ValidationStatus.correct) {
+          _attemptCount++;
+        }
       }
     });
 
-    if (isCorrect) {
+    if (validationResult.status == ValidationStatus.correct) {
       await _progressManager.completeMission(widget.mission.id);
       final newlyUnlocked = await _achievementEngine.evaluateAndUnlock();
 
@@ -576,10 +584,14 @@ class _MissionScreenState extends State<MissionScreen> {
                                             height: 1.4,
                                             color: _outputText.contains('❌')
                                                 ? AppColors.slagRed
-                                                : (_outputText.contains('✅')
-                                                    ? const Color(0xFF1DD1A1)
-                                                    : _creamMatte.withValues(
-                                                        alpha: 0.85)),
+                                                : (_outputText.contains('⚠️')
+                                                    ? const Color(0xFFF39C12)
+                                                    : (_outputText.contains('✅')
+                                                        ? const Color(
+                                                            0xFF1DD1A1)
+                                                        : _creamMatte
+                                                            .withValues(
+                                                                alpha: 0.85))),
                                           ),
                                         ),
                                       ),
