@@ -166,5 +166,101 @@
         }
       }
     ]
+  },
+  {
+    "moduleId": "mod_3",
+    "title": "Loops & Iteration",
+    "description": "Automate repetitive tasks using for loops, range sequences, while loops, and early break statements.",
+    "order": 3,
+    "estimatedHours": 1.5,
+    "missions": [
+      {
+        "id": "m3_1",
+        "title": "For Loops",
+        "description": "Iterate over elements in a list using a for loop.",
+        "objective": "Create numbers = [1, 2, 3]. Use a for loop to print each item in numbers.",
+        "starterCode": "# Iterate over list below",
+        "hints": [
+          "Use for num in numbers: followed by an indented print(num).",
+          "Write:\nnumbers = [1, 2, 3]\nfor num in numbers:\n    print(num)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "numbers = [1, 2, 3]\nfor num in numbers:\n    print(num)"
+          ]
+        }
+      },
+      {
+        "id": "m3_2",
+        "title": "The Range Function",
+        "description": "Generate numeric sequences dynamically using range().",
+        "objective": "Use a for loop with range(1, 4) to print numbers 1 through 3.",
+        "starterCode": "# Loop using range below",
+        "hints": [
+          "range(1, 4) produces 1, 2, 3.",
+          "Write:\nfor i in range(1, 4):\n    print(i)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "for i in range(1, 4):\n    print(i)"
+          ]
+        }
+      },
+      {
+        "id": "m3_3",
+        "title": "While Loops",
+        "description": "Repeat code as long as a condition evaluates to True.",
+        "objective": "Create count = 1. Write a while loop checking while count <= 3: that prints count and increments count by 1.",
+        "starterCode": "# Write while loop below",
+        "hints": [
+          "Make sure to increment count inside the loop to avoid infinite loops.",
+          "Write:\ncount = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "count = 1\nwhile count <= 3:\n    print(count)\n    count = count + 1",
+            "count = 1\nwhile count <= 3:\n    print(count)\n    count += 1"
+          ]
+        }
+      },
+      {
+        "id": "m3_4",
+        "title": "Break Statements",
+        "description": "Exit a loop prematurely when a condition is met.",
+        "objective": "Loop over range(1, 6) using for i in range(1, 6):. If i == 3 break, otherwise print i.",
+        "starterCode": "# Exit loop early below",
+        "hints": [
+          "Put the if i == 3: check inside the loop before printing.",
+          "Write:\nfor i in range(1, 6):\n    if i == 3:\n        break\n    print(i)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "for i in range(1, 6):\n    if i == 3:\n        break\n    print(i)"
+          ]
+        }
+      },
+      {
+        "id": "m3_5",
+        "title": "Accumulator Pattern",
+        "description": "Sum values dynamically inside an iteration loop.",
+        "objective": "Create total = 0. Use a for loop over range(1, 4) to add i to total, then print total after the loop.",
+        "starterCode": "# Sum numbers in loop below",
+        "hints": [
+          "Un-indent the final print(total) statement so it executes after the loop finishes.",
+          "Write:\ntotal = 0\nfor i in range(1, 4):\n    total = total + i\nprint(total)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "total = 0\nfor i in range(1, 4):\n    total = total + i\nprint(total)",
+            "total = 0\nfor i in range(1, 4):\n    total += i\nprint(total)"
+          ]
+        }
+      }
+    ]
   }
 ]

@@ -5,8 +5,10 @@ abstract class PythonRunner {
   Future<ExecutionResult> run(String code);
 }
 
+enum _LoopSignal { none, breakLoop, continueLoop }
+
 /// Native Dart interpreter with support for print statements, variable assignment,
-/// string/numeric evaluation, and simple conditional control flow (if / elif / else).
+/// string/numeric evaluation, conditionals (if/elif/else), and loops (for/while/range/break).
 class LocalPythonInterpreter implements PythonRunner {
   @override
   Future<ExecutionResult> run(String code) async {
@@ -17,66 +19,7 @@ class LocalPythonInterpreter implements PythonRunner {
     final rawLines = code.split('\n');
 
     try {
-      int i = 0;
-      while (i < rawLines.length) {
-        final rawLine = rawLines[i];
-        final line = _stripComment(rawLine).trimRight();
-
-        if (line.trim().isEmpty) {
-          i++;
-          continue;
-        }
-
-        final trimmed = line.trim();
-
-        // Check for 'if' statement
-        if (trimmed.startsWith('if ') && trimmed.endsWith(':')) {
-          final conditionStr = trimmed.substring(3, trimmed.length - 1).trim();
-          final conditionResult = _evaluateCondition(conditionStr, environment);
-
-          bool blockExecuted = false;
-
-          if (conditionResult) {
-            i = _executeIndentedBlock(rawLines, i + 1, environment, stdout);
-            blockExecuted = true;
-          } else {
-            i = _skipIndentedBlock(rawLines, i + 1);
-          }
-
-          // Handle following elif / else blocks
-          while (i < rawLines.length) {
-            final nextRaw = rawLines[i];
-            final nextTrimmed = _stripComment(nextRaw).trim();
-
-            if (nextTrimmed.startsWith('elif ') && nextTrimmed.endsWith(':')) {
-              final elifConditionStr =
-                  nextTrimmed.substring(5, nextTrimmed.length - 1).trim();
-              if (!blockExecuted &&
-                  _evaluateCondition(elifConditionStr, environment)) {
-                i = _executeIndentedBlock(rawLines, i + 1, environment, stdout);
-                blockExecuted = true;
-              } else {
-                i = _skipIndentedBlock(rawLines, i + 1);
-              }
-            } else if (nextTrimmed.startsWith('else:') ||
-                nextTrimmed == 'else:') {
-              if (!blockExecuted) {
-                i = _executeIndentedBlock(rawLines, i + 1, environment, stdout);
-                blockExecuted = true;
-              } else {
-                i = _skipIndentedBlock(rawLines, i + 1);
-              }
-            } else {
-              break;
-            }
-          }
-          continue;
-        }
-
-        // Single-line statements (print, variable assignment)
-        _executeLine(trimmed, environment, stdout);
-        i++;
-      }
+      _executeBlock(rawLines, 0, rawLines.length, environment, stdout);
 
       stopwatch.stop();
       return ExecutionResult(
@@ -96,13 +39,216 @@ class LocalPythonInterpreter implements PythonRunner {
     }
   }
 
+  _LoopSignal _executeBlock(
+    List<String> rawLines,
+    int startIndex,
+    int endIndex,
+    Map<String, dynamic> env,
+    StringBuffer stdout,
+  ) {
+    int i = startIndex;
+    while (i < endIndex) {
+      final rawLine = rawLines[i];
+      final line = _stripComment(rawLine).trimRight();
+
+      if (line.trim().isEmpty) {
+        i++;
+        continue;
+      }
+
+      final trimmed = line.trim();
+
+      if (trimmed == 'break') {
+        return _LoopSignal.breakLoop;
+      }
+      if (trimmed == 'continue') {
+        return _LoopSignal.continueLoop;
+      }
+
+      // 1. FOR loop
+      if (trimmed.startsWith('for ') && trimmed.endsWith(':')) {
+        i = _handleForLoop(rawLines, i, env, stdout);
+        continue;
+      }
+
+      // 2. WHILE loop
+      if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
+        i = _handleWhileLoop(rawLines, i, env, stdout);
+        continue;
+      }
+
+      // 3. IF / ELIF / ELSE
+      if (trimmed.startsWith('if ') && trimmed.endsWith(':')) {
+        i = _handleIfStatement(rawLines, i, env, stdout);
+        continue;
+      }
+
+      // 4. Single line statement
+      _executeLine(trimmed, env, stdout);
+      i++;
+    }
+    return _LoopSignal.none;
+  }
+
+  int _handleForLoop(
+    List<String> rawLines,
+    int headerIndex,
+    Map<String, dynamic> env,
+    StringBuffer stdout,
+  ) {
+    final header = _stripComment(rawLines[headerIndex]).trim();
+    // Format: for <itemVar> in <iterable>:
+    final match = RegExp(r'^for\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+(.+):$')
+        .firstMatch(header);
+    if (match == null) {
+      throw FormatException("SyntaxError: invalid for loop syntax '$header'");
+    }
+
+    final iterVar = match.group(1)!;
+    final iterExpr = match.group(2)!;
+
+    final blockIndices = _findIndentedBlockIndices(rawLines, headerIndex + 1);
+    final blockStart = blockIndices[0];
+    final blockEnd = blockIndices[1];
+
+    final iterable = _evaluateIterable(iterExpr, env);
+
+    for (final item in iterable) {
+      env[iterVar] = item;
+      final signal = _executeBlock(rawLines, blockStart, blockEnd, env, stdout);
+      if (signal == _LoopSignal.breakLoop) {
+        break;
+      }
+    }
+
+    return blockEnd;
+  }
+
+  int _handleWhileLoop(
+    List<String> rawLines,
+    int headerIndex,
+    Map<String, dynamic> env,
+    StringBuffer stdout,
+  ) {
+    final header = _stripComment(rawLines[headerIndex]).trim();
+    final conditionStr = header.substring(6, header.length - 1).trim();
+
+    final blockIndices = _findIndentedBlockIndices(rawLines, headerIndex + 1);
+    final blockStart = blockIndices[0];
+    final blockEnd = blockIndices[1];
+
+    int maxSafetyIterations = 1000;
+    int currentIteration = 0;
+
+    while (_evaluateCondition(conditionStr, env)) {
+      currentIteration++;
+      if (currentIteration > maxSafetyIterations) {
+        throw FormatException("TimeLimitExceeded: Infinite loop detected.");
+      }
+
+      final signal = _executeBlock(rawLines, blockStart, blockEnd, env, stdout);
+      if (signal == _LoopSignal.breakLoop) {
+        break;
+      }
+    }
+
+    return blockEnd;
+  }
+
+  int _handleIfStatement(
+    List<String> rawLines,
+    int headerIndex,
+    Map<String, dynamic> env,
+    StringBuffer stdout,
+  ) {
+    int i = headerIndex;
+    bool blockExecuted = false;
+
+    while (i < rawLines.length) {
+      final header = _stripComment(rawLines[i]).trim();
+      if (header.isEmpty) {
+        i++;
+        continue;
+      }
+
+      if (header.startsWith('if ') && header.endsWith(':')) {
+        final conditionStr = header.substring(3, header.length - 1).trim();
+        final blockIndices = _findIndentedBlockIndices(rawLines, i + 1);
+
+        if (_evaluateCondition(conditionStr, env)) {
+          _executeBlock(
+              rawLines, blockIndices[0], blockIndices[1], env, stdout);
+          blockExecuted = true;
+        }
+        i = blockIndices[1];
+      } else if (header.startsWith('elif ') && header.endsWith(':')) {
+        final conditionStr = header.substring(5, header.length - 1).trim();
+        final blockIndices = _findIndentedBlockIndices(rawLines, i + 1);
+
+        if (!blockExecuted && _evaluateCondition(conditionStr, env)) {
+          _executeBlock(
+              rawLines, blockIndices[0], blockIndices[1], env, stdout);
+          blockExecuted = true;
+        }
+        i = blockIndices[1];
+      } else if (header.startsWith('else:') || header == 'else:') {
+        final blockIndices = _findIndentedBlockIndices(rawLines, i + 1);
+
+        if (!blockExecuted) {
+          _executeBlock(
+              rawLines, blockIndices[0], blockIndices[1], env, stdout);
+          blockExecuted = true;
+        }
+        i = blockIndices[1];
+      } else {
+        break;
+      }
+    }
+
+    return i;
+  }
+
+  List<int> _findIndentedBlockIndices(List<String> lines, int startIndex) {
+    int curr = startIndex;
+    while (curr < lines.length) {
+      final raw = lines[curr];
+      final line = _stripComment(raw);
+      if (line.trim().isEmpty) {
+        curr++;
+        continue;
+      }
+      if (raw.startsWith(' ') || raw.startsWith('\t')) {
+        curr++;
+      } else {
+        break;
+      }
+    }
+    return [startIndex, curr];
+  }
+
   void _executeLine(
       String line, Map<String, dynamic> env, StringBuffer stdout) {
+    // 1. Print statements
     if (line.startsWith('print(') && line.endsWith(')')) {
       final content = line.substring(6, line.length - 1).trim();
       final evaluated = _evaluateExpression(content, env);
       stdout.writeln(evaluated);
-    } else if (line.contains('=')) {
+    }
+    // 2. Compound assignment operator (+=)
+    else if (line.contains('+=')) {
+      final parts = line.split('+=');
+      if (parts.length == 2) {
+        final varName = parts[0].trim();
+        final expr = parts[1].trim();
+        final currentVal = env[varName] ?? 0;
+        final addVal = _evaluateExpression(expr, env);
+        env[varName] = (currentVal is num && addVal is num)
+            ? (currentVal + addVal)
+            : '$currentVal$addVal';
+      }
+    }
+    // 3. Regular assignment (=)
+    else if (line.contains('=')) {
       final parts = line.split('=');
       if (parts.length == 2) {
         final varName = parts[0].trim();
@@ -118,67 +264,44 @@ class LocalPythonInterpreter implements PythonRunner {
     }
   }
 
-  int _executeIndentedBlock(
-    List<String> lines,
-    int startIndex,
-    Map<String, dynamic> env,
-    StringBuffer stdout,
-  ) {
-    int curr = startIndex;
-    while (curr < lines.length) {
-      final raw = lines[curr];
-      final line = _stripComment(raw);
-      if (line.trim().isEmpty) {
-        curr++;
-        continue;
-      }
-      // Check for indentation (leading space or tab)
-      if (raw.startsWith(' ') || raw.startsWith('\t')) {
-        _executeLine(line.trim(), env, stdout);
-        curr++;
-      } else {
-        break;
-      }
-    }
-    return curr;
-  }
+  List<dynamic> _evaluateIterable(String expr, Map<String, dynamic> env) {
+    expr = expr.trim();
+    if (expr.startsWith('range(') && expr.endsWith(')')) {
+      final inner = expr.substring(6, expr.length - 1);
+      final parts =
+          inner.split(',').map((e) => _evaluateExpression(e, env)).toList();
 
-  int _skipIndentedBlock(List<String> lines, int startIndex) {
-    int curr = startIndex;
-    while (curr < lines.length) {
-      final raw = lines[curr];
-      final line = _stripComment(raw);
-      if (line.trim().isEmpty) {
-        curr++;
-        continue;
-      }
-      if (raw.startsWith(' ') || raw.startsWith('\t')) {
-        curr++;
-      } else {
-        break;
+      if (parts.length == 1 && parts[0] is int) {
+        return List.generate(parts[0] as int, (i) => i);
+      } else if (parts.length == 2 && parts[0] is int && parts[1] is int) {
+        final start = parts[0] as int;
+        final end = parts[1] as int;
+        return List.generate(end - start, (i) => start + i);
       }
     }
-    return curr;
+
+    final evaluated = _evaluateExpression(expr, env);
+    if (evaluated is List) {
+      return evaluated;
+    }
+    throw FormatException("TypeError: '$expr' is not iterable");
   }
 
   bool _evaluateCondition(String expr, Map<String, dynamic> env) {
     expr = expr.trim();
 
-    // Check for logical AND
     if (expr.contains(' and ')) {
       final parts = expr.split(' and ');
       return _evaluateCondition(parts[0], env) &&
           _evaluateCondition(parts[1], env);
     }
 
-    // Check for logical OR
     if (expr.contains(' or ')) {
       final parts = expr.split(' or ');
       return _evaluateCondition(parts[0], env) ||
           _evaluateCondition(parts[1], env);
     }
 
-    // Operators: ==, !=, >=, <=, >, <
     final ops = ['==', '!=', '>=', '<=', '>', '<'];
     for (var op in ops) {
       if (expr.contains(op)) {
@@ -223,6 +346,13 @@ class LocalPythonInterpreter implements PythonRunner {
     if (expr == 'True') return true;
     if (expr == 'False') return false;
 
+    // List Literal [1, 2, 3]
+    if (expr.startsWith('[') && expr.endsWith(']')) {
+      final inner = expr.substring(1, expr.length - 1).trim();
+      if (inner.isEmpty) return [];
+      return inner.split(',').map((e) => _evaluateExpression(e, env)).toList();
+    }
+
     // String literal
     if ((expr.startsWith('"') && expr.endsWith('"')) ||
         (expr.startsWith("'") && expr.endsWith("'"))) {
@@ -239,7 +369,7 @@ class LocalPythonInterpreter implements PythonRunner {
       return env[expr];
     }
 
-    // Basic String/Numeric addition
+    // Addition / Concatenation
     if (expr.contains('+')) {
       final terms = expr.split('+').map((e) => e.trim()).toList();
       dynamic result = _evaluateExpression(terms[0], env);
