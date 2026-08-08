@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/haptic_service.dart';
 import '../theme/app_colors.dart';
 
 /// Neubrutalist folder-style card with a top tab, solid 2.5px border, and hard black drop shadow.
@@ -23,7 +24,10 @@ class NeubrutalistFolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticService.lightImpact();
+        onTap();
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

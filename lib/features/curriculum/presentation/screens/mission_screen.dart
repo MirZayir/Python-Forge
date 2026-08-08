@@ -6,6 +6,7 @@ import '../../../../core/progression/achievement_engine.dart';
 import '../../../../core/progression/progress_manager.dart';
 import '../../../../core/progression/streak_engine.dart';
 import '../../../../core/progression/xp_manager.dart';
+import '../../../../core/services/haptic_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/code_editor_widget.dart';
@@ -143,6 +144,7 @@ class _MissionScreenState extends State<MissionScreen> {
     });
 
     if (validationResult.status == ValidationStatus.correct) {
+      HapticService.successPattern();
       await _progressManager.completeMission(widget.mission.id);
       await _streakEngine.recordActivity();
       final newlyUnlocked = await _achievementEngine.evaluateAndUnlock();
@@ -175,10 +177,15 @@ class _MissionScreenState extends State<MissionScreen> {
           ),
         );
       }
+    } else if (validationResult.status == ValidationStatus.methodWarning) {
+      HapticService.mediumImpact();
+    } else {
+      HapticService.heavyImpact();
     }
   }
 
   void _showHint() {
+    HapticService.lightImpact();
     if (widget.mission.hints.isEmpty) return;
 
     final hintIndex = (_attemptCount > 0 ? _attemptCount - 1 : 0) %
@@ -228,7 +235,10 @@ class _MissionScreenState extends State<MissionScreen> {
                 ),
                 const SizedBox(height: AppSpacing.large),
                 GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () {
+                    HapticService.lightImpact();
+                    Navigator.of(context).pop();
+                  },
                   child: Container(
                     height: 48,
                     width: double.infinity,
@@ -317,6 +327,7 @@ class _MissionScreenState extends State<MissionScreen> {
                 if (nextMission != null) ...[
                   GestureDetector(
                     onTap: () {
+                      HapticService.lightImpact();
                       Navigator.of(context).pop();
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
@@ -363,6 +374,7 @@ class _MissionScreenState extends State<MissionScreen> {
                 ],
                 GestureDetector(
                   onTap: () {
+                    HapticService.lightImpact();
                     Navigator.of(context).pop();
                     Navigator.of(context).pop();
                   },
@@ -404,7 +416,10 @@ class _MissionScreenState extends State<MissionScreen> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () {
+            HapticService.lightImpact();
+            Navigator.of(context).pop();
+          },
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -787,6 +802,7 @@ class _MissionScreenState extends State<MissionScreen> {
             padding: const EdgeInsets.only(bottom: 12.0),
             child: GestureDetector(
               onTap: () {
+                HapticService.selectionClick();
                 setState(() {
                   _selectedMcqOption = option;
                 });
