@@ -274,5 +274,102 @@
         "type": "code"
       }
     ]
+  },
+  {
+    "moduleId": "mod_4",
+    "title": "Data Structures",
+    "description": "Master Python data collections including lists, list methods, and key-value dictionaries.",
+    "order": 4,
+    "estimatedHours": 1.5,
+    "missions": [
+      {
+        "id": "m4_1",
+        "title": "List Mutation",
+        "description": "Add new items to the end of a list using append().",
+        "objective": "Create fruits = [\"apple\"]. Call fruits.append(\"banana\"), then print fruits.",
+        "starterCode": "# Add item to list below",
+        "hints": [
+          "Write:\nfruits = [\"apple\"]\nfruits.append(\"banana\")\nprint(fruits)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "fruits = [\"apple\"]\nfruits.append(\"banana\")\nprint(fruits)"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m4_2",
+        "title": "Dictionary Lookups Quiz",
+        "description": "Understand key-value retrieval in dictionaries.",
+        "objective": "Given user = {\"name\": \"Zayir\"}, how do you access the value \"Zayir\"?",
+        "starterCode": "",
+        "hints": [
+          "Use square bracket notation with the string key 'name'."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["user[\"name\"]"]
+        },
+        "type": "mcq",
+        "mcqOptions": [
+          "user.name",
+          "user[\"name\"]",
+          "user(0)",
+          "user.get(0)"
+        ]
+      },
+      {
+        "id": "m4_3",
+        "title": "Dictionary Creation",
+        "description": "Store key-value pairs using Python dictionaries.",
+        "objective": "Create person = {\"role\": \"Developer\"}. Print person[\"role\"].",
+        "starterCode": "# Create dictionary below",
+        "hints": [
+          "Write:\nperson = {\"role\": \"Developer\"}\nprint(person[\"role\"])"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "person = {\"role\": \"Developer\"}\nprint(person[\"role\"])"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m4_4",
+        "title": "List Pop Fill-In",
+        "description": "Remove the last item from a list.",
+        "objective": "Fill in the missing method name to remove the last item from numbers.",
+        "starterCode": "numbers = [1, 2, 3]\nnumbers.___()",
+        "hints": [
+          "The method to remove and return the last list item is pop."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["pop"]
+        },
+        "type": "fill_in_blank"
+      },
+      {
+        "id": "m4_5",
+        "title": "List Indexing",
+        "description": "Retrieve specific elements by zero-based index.",
+        "objective": "Create colors = [\"red\", \"green\", \"blue\"]. Print the second element (\"green\").",
+        "starterCode": "# Print second element",
+        "hints": [
+          "In zero-based indexing, the second element is at index 1.",
+          "Write:\ncolors = [\"red\", \"green\", \"blue\"]\nprint(colors[1])"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "colors = [\"red\", \"green\", \"blue\"]\nprint(colors[1])"
+          ]
+        },
+        "type": "code"
+      }
+    ]
   }
 ]

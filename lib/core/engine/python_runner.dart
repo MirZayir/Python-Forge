@@ -8,7 +8,7 @@ abstract class PythonRunner {
 enum _LoopSignal { none, breakLoop, continueLoop }
 
 /// Native Dart interpreter with support for print statements, variable assignment,
-/// string/numeric evaluation, conditionals (if/elif/else), and loops (for/while/range/break).
+/// string/numeric evaluation, conditionals, loops, lists, dictionaries, and method calls (.append, .pop).
 class LocalPythonInterpreter implements PythonRunner {
   @override
   Future<ExecutionResult> run(String code) async {
@@ -97,7 +97,6 @@ class LocalPythonInterpreter implements PythonRunner {
     StringBuffer stdout,
   ) {
     final header = _stripComment(rawLines[headerIndex]).trim();
-    // Format: for <itemVar> in <iterable>:
     final match = RegExp(r'^for\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+(.+):$')
         .firstMatch(header);
     if (match == null) {
@@ -234,7 +233,31 @@ class LocalPythonInterpreter implements PythonRunner {
       final evaluated = _evaluateExpression(content, env);
       stdout.writeln(evaluated);
     }
-    // 2. Compound assignment operator (+=)
+    // 2. Method invocation on objects (e.g. fruits.append("banana") or items.pop())
+    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\(.*\)$')
+        .hasMatch(line)) {
+      final dotIndex = line.indexOf('.');
+      final varName = line.substring(0, dotIndex).trim();
+      final methodCall = line.substring(dotIndex + 1).trim();
+
+      if (env.containsKey(varName)) {
+        final target = env[varName];
+        if (target is List) {
+          if (methodCall.startsWith('append(') && methodCall.endsWith(')')) {
+            final argStr =
+                methodCall.substring(7, methodCall.length - 1).trim();
+            final val = _evaluateExpression(argStr, env);
+            target.add(val);
+          } else if (methodCall.startsWith('pop(') &&
+              methodCall.endsWith(')')) {
+            if (target.isNotEmpty) {
+              target.removeLast();
+            }
+          }
+        }
+      }
+    }
+    // 3. Compound assignment (+=)
     else if (line.contains('+=')) {
       final parts = line.split('+=');
       if (parts.length == 2) {
@@ -247,7 +270,7 @@ class LocalPythonInterpreter implements PythonRunner {
             : '$currentVal$addVal';
       }
     }
-    // 3. Regular assignment (=)
+    // 4. Regular variable assignment (=)
     else if (line.contains('=')) {
       final parts = line.split('=');
       if (parts.length == 2) {
@@ -346,11 +369,48 @@ class LocalPythonInterpreter implements PythonRunner {
     if (expr == 'True') return true;
     if (expr == 'False') return false;
 
+    // Dictionary Literal {"key": "value"}
+    if (expr.startsWith('{') && expr.endsWith('}')) {
+      final inner = expr.substring(1, expr.length - 1).trim();
+      if (inner.isEmpty) return <String, dynamic>{};
+
+      final Map<String, dynamic> map = {};
+      final pairs = inner.split(',');
+      for (var pair in pairs) {
+        final kv = pair.split(':');
+        if (kv.length == 2) {
+          final key = _evaluateExpression(kv[0], env).toString();
+          final val = _evaluateExpression(kv[1], env);
+          map[key] = val;
+        }
+      }
+      return map;
+    }
+
     // List Literal [1, 2, 3]
     if (expr.startsWith('[') && expr.endsWith(']')) {
       final inner = expr.substring(1, expr.length - 1).trim();
       if (inner.isEmpty) return [];
       return inner.split(',').map((e) => _evaluateExpression(e, env)).toList();
+    }
+
+    // Bracket Indexing var["key"] or var[0]
+    final indexMatch =
+        RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*\[(.*)\]$').firstMatch(expr);
+    if (indexMatch != null) {
+      final varName = indexMatch.group(1)!;
+      final keyExpr = indexMatch.group(2)!;
+
+      if (env.containsKey(varName)) {
+        final collection = env[varName];
+        final keyOrIndex = _evaluateExpression(keyExpr, env);
+
+        if (collection is Map) {
+          return collection[keyOrIndex.toString()];
+        } else if (collection is List && keyOrIndex is int) {
+          return collection[keyOrIndex];
+        }
+      }
     }
 
     // String literal

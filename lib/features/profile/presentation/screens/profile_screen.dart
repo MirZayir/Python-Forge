@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/progression/streak_engine.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -7,7 +8,7 @@ import '../../../../core/widgets/forge_scaffold.dart';
 import '../../data/services/profile_service.dart';
 import '../../domain/models/learner_profile.dart';
 
-/// Learner profile dashboard matching the American Vintage Dark theme.
+/// Learner profile dashboard synced with live StreakEngine and Progress statistics.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -24,23 +25,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color _textMuted = Color(0xFFA0A0A5);
 
   final ProfileService _profileService = ProfileService();
+  final StreakEngine _streakEngine = StreakEngine();
 
   LearnerProfile? _profile;
+  StreakData? _streakData;
   bool _isLoading = true;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadProfileData();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadProfileData() async {
     try {
       final profile = await _profileService.getProfile();
+      final streak = await _streakEngine.getStreakData();
+
       if (mounted) {
         setState(() {
           _profile = profile;
+          _streakData = streak;
           _isLoading = false;
         });
       }
@@ -101,6 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final p = _profile!;
+    final streak = _streakData?.currentStreak ?? 0;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.large),
@@ -181,23 +188,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: AppSpacing.large),
 
-        // Bento Statistics Grid
+        // Bento Statistics Grid (Missions, Streak, Achievements)
         Row(
           children: [
             Expanded(
               child: _buildBentoStatCard(
-                label: 'Missions Done',
-                value: '${p.completedMissionsCount}',
-                icon: Icons.check_circle_rounded,
+                label: 'Daily Streak',
+                value: '$streak Days',
+                icon: Icons.local_fire_department_rounded,
                 accentColor: _retroOrange,
               ),
             ),
             const SizedBox(width: AppSpacing.medium),
             Expanded(
               child: _buildBentoStatCard(
-                label: 'Achievements',
-                value: '${p.achievementCount}',
-                icon: Icons.emoji_events_rounded,
+                label: 'Missions Done',
+                value: '${p.completedMissionsCount}',
+                icon: Icons.check_circle_rounded,
                 accentColor: _creamBeige,
               ),
             ),
