@@ -12,6 +12,15 @@ class _ReturnSignal implements Exception {
   _ReturnSignal(this.value);
 }
 
+class _PythonException implements Exception {
+  final String type;
+  final String message;
+  _PythonException(this.type, this.message);
+
+  @override
+  String toString() => '$type: $message';
+}
+
 class _FunctionDef {
   final List<String> params;
   final List<String> bodyLines;
@@ -30,8 +39,8 @@ class _Instance {
   _Instance(this.classDef);
 }
 
-/// Native Dart interpreter supporting Classes, Instances, Attributes, Methods,
-/// Functions, Scope, Built-ins (len, type, range), Lists, Dictionaries, Conditionals, and Loops.
+/// Native Dart interpreter supporting try-except blocks, OOP, Functions, Scope,
+/// Built-ins (len, type, range, int, str), Lists, Dictionaries, Conditionals, and Loops.
 class LocalPythonInterpreter implements PythonRunner {
   @override
   Future<ExecutionResult> run(String code) async {
@@ -102,41 +111,130 @@ class LocalPythonInterpreter implements PythonRunner {
         throw _ReturnSignal(val);
       }
 
-      // 1. Class Definition
+      // 1. Try / Except Blocks
+      if (trimmed == 'try:' || trimmed.startsWith('try:')) {
+        i = _handleTryExcept(rawLines, i, env, stdout);
+        continue;
+      }
+
+      // 2. Class Definition
       if (trimmed.startsWith('class ') && trimmed.endsWith(':')) {
         i = _handleClassDef(rawLines, i, env);
         continue;
       }
 
-      // 2. Function Definition
+      // 3. Function Definition
       if (trimmed.startsWith('def ') && trimmed.endsWith(':')) {
         i = _handleFunctionDef(rawLines, i, env);
         continue;
       }
 
-      // 3. FOR loop
+      // 4. FOR loop
       if (trimmed.startsWith('for ') && trimmed.endsWith(':')) {
         i = _handleForLoop(rawLines, i, env, stdout);
         continue;
       }
 
-      // 4. WHILE loop
+      // 5. WHILE loop
       if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
         i = _handleWhileLoop(rawLines, i, env, stdout);
         continue;
       }
 
-      // 5. IF / ELIF / ELSE
+      // 6. IF / ELIF / ELSE
       if (trimmed.startsWith('if ') && trimmed.endsWith(':')) {
         i = _handleIfStatement(rawLines, i, env, stdout);
         continue;
       }
 
-      // 6. Single line statement
+      // 7. Single line statement
       _executeLine(trimmed, env, stdout);
       i++;
     }
     return _LoopSignal.none;
+  }
+
+  int _handleTryExcept(
+    List<String> rawLines,
+    int tryHeaderIndex,
+    Map<String, dynamic> env,
+    StringBuffer stdout,
+  ) {
+    final tryBlockIndices =
+        _findIndentedBlockIndices(rawLines, tryHeaderIndex + 1);
+    int curr = tryBlockIndices[1];
+
+    final List<Map<String, dynamic>> exceptBlocks = [];
+
+    while (curr < rawLines.length) {
+      final line = _stripComment(rawLines[curr]).trim();
+      if (line.isEmpty) {
+        curr++;
+        continue;
+      }
+
+      if (line.startsWith('except') && line.endsWith(':')) {
+        String excType = 'Exception';
+        String? varName;
+
+        final headerContent = line.substring(6, line.length - 1).trim();
+        if (headerContent.isNotEmpty) {
+          if (headerContent.contains(' as ')) {
+            final parts = headerContent.split(' as ');
+            excType = parts[0].trim();
+            varName = parts[1].trim();
+          } else {
+            excType = headerContent;
+          }
+        }
+
+        final excBlockIndices = _findIndentedBlockIndices(rawLines, curr + 1);
+        exceptBlocks.add({
+          'type': excType,
+          'varName': varName,
+          'start': excBlockIndices[0],
+          'end': excBlockIndices[1],
+        });
+        curr = excBlockIndices[1];
+      } else {
+        break;
+      }
+    }
+
+    try {
+      _executeBlock(
+          rawLines, tryBlockIndices[0], tryBlockIndices[1], env, stdout);
+    } catch (e) {
+      if (e is _ReturnSignal) rethrow;
+
+      _PythonException? exc;
+      if (e is _PythonException) {
+        exc = e;
+      } else if (e is FormatException) {
+        exc = _PythonException('ValueError', e.message);
+      } else {
+        exc = _PythonException('Exception', e.toString());
+      }
+
+      bool handled = false;
+      for (final block in exceptBlocks) {
+        final targetType = block['type'] as String;
+        if (targetType == 'Exception' || targetType == exc.type) {
+          final varName = block['varName'] as String?;
+          if (varName != null) {
+            env[varName] = exc.message;
+          }
+          _executeBlock(rawLines, block['start'] as int, block['end'] as int,
+              env, stdout);
+          handled = true;
+          break;
+        }
+      }
+
+      if (!handled) rethrow;
+    }
+
+    return curr;
   }
 
   int _handleClassDef(
@@ -189,8 +287,8 @@ class LocalPythonInterpreter implements PythonRunner {
     final match = RegExp(r'^def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\):$')
         .firstMatch(header);
     if (match == null) {
-      throw FormatException(
-          "SyntaxError: invalid function definition '$header'");
+      throw _PythonException(
+          "SyntaxError", "invalid function definition '$header'");
     }
 
     final funcName = match.group(1)!;
@@ -216,7 +314,8 @@ class LocalPythonInterpreter implements PythonRunner {
     final match = RegExp(r'^for\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+(.+):$')
         .firstMatch(header);
     if (match == null) {
-      throw FormatException("SyntaxError: invalid for loop syntax '$header'");
+      throw _PythonException(
+          "SyntaxError", "invalid for loop syntax '$header'");
     }
 
     final iterVar = match.group(1)!;
@@ -258,7 +357,7 @@ class LocalPythonInterpreter implements PythonRunner {
     while (_evaluateCondition(conditionStr, env)) {
       currentIteration++;
       if (currentIteration > maxSafetyIterations) {
-        throw FormatException("TimeLimitExceeded: Infinite loop detected.");
+        throw _PythonException("TimeLimitExceeded", "Infinite loop detected.");
       }
 
       final signal = _executeBlock(rawLines, blockStart, blockEnd, env, stdout);
@@ -343,14 +442,11 @@ class LocalPythonInterpreter implements PythonRunner {
 
   void _executeLine(
       String line, Map<String, dynamic> env, StringBuffer stdout) {
-    // 1. Print statements
     if (line.startsWith('print(') && line.endsWith(')')) {
       final content = line.substring(6, line.length - 1).trim();
       final evaluated = _evaluateExpression(content, env);
       stdout.writeln(evaluated);
-    }
-    // 2. Instance Field Assignment (e.g., p.name = "Alice")
-    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*=')
+    } else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*=')
         .hasMatch(line)) {
       final parts = line.split('=');
       final target = parts[0].trim();
@@ -363,14 +459,10 @@ class LocalPythonInterpreter implements PythonRunner {
         final inst = env[objName] as _Instance;
         inst.fields[attrName] = _evaluateExpression(expr, env);
       }
-    }
-    // 3. Standalone Function / Method Call (e.g., greet() or p.speak())
-    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_.]*\s*\(.*\)$').hasMatch(line) &&
+    } else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_.]*\s*\(.*\)$').hasMatch(line) &&
         !line.contains('=')) {
       _evaluateExpression(line, env);
-    }
-    // 4. Compound assignment (+=)
-    else if (line.contains('+=')) {
+    } else if (line.contains('+=')) {
       final parts = line.split('+=');
       if (parts.length == 2) {
         final varName = parts[0].trim();
@@ -381,16 +473,14 @@ class LocalPythonInterpreter implements PythonRunner {
             ? (currentVal + addVal)
             : '$currentVal$addVal';
       }
-    }
-    // 5. Variable assignment (=)
-    else if (line.contains('=')) {
+    } else if (line.contains('=')) {
       final parts = line.split('=');
       if (parts.length == 2) {
         final varName = parts[0].trim();
         final expr = parts[1].trim();
 
         if (!_isValidIdentifier(varName)) {
-          throw FormatException("SyntaxError: invalid syntax '$varName'");
+          throw _PythonException("SyntaxError", "invalid syntax '$varName'");
         }
 
         final evaluated = _evaluateExpression(expr, env);
@@ -419,7 +509,7 @@ class LocalPythonInterpreter implements PythonRunner {
     if (evaluated is List) {
       return evaluated;
     }
-    throw FormatException("TypeError: '$expr' is not iterable");
+    throw _PythonException("TypeError", "'$expr' is not iterable");
   }
 
   bool _evaluateCondition(String expr, Map<String, dynamic> env) {
@@ -481,6 +571,40 @@ class LocalPythonInterpreter implements PythonRunner {
     if (expr == 'True') return true;
     if (expr == 'False') return false;
 
+    // Division / ZeroDivisionError check
+    if (expr.contains('/') && !expr.startsWith('"') && !expr.startsWith("'")) {
+      final parts = expr.split('/');
+      if (parts.length == 2) {
+        final left = _evaluateExpression(parts[0], env);
+        final right = _evaluateExpression(parts[1], env);
+
+        if (left is num && right is num) {
+          if (right == 0) {
+            throw _PythonException('ZeroDivisionError', 'division by zero');
+          }
+          return left / right;
+        }
+      }
+    }
+
+    // Built-in int()
+    if (expr.startsWith('int(') && expr.endsWith(')')) {
+      final inner = expr.substring(4, expr.length - 1).trim();
+      final val = _evaluateExpression(inner, env);
+      final parsed = int.tryParse(val.toString());
+      if (parsed == null) {
+        throw _PythonException(
+            'ValueError', "invalid literal for int(): '$val'");
+      }
+      return parsed;
+    }
+
+    // Built-in str()
+    if (expr.startsWith('str(') && expr.endsWith(')')) {
+      final inner = expr.substring(4, expr.length - 1).trim();
+      return _evaluateExpression(inner, env).toString();
+    }
+
     // Built-in len()
     if (expr.startsWith('len(') && expr.endsWith(')')) {
       final inner = expr.substring(4, expr.length - 1).trim();
@@ -488,8 +612,8 @@ class LocalPythonInterpreter implements PythonRunner {
       if (val is String) return val.length;
       if (val is List) return val.length;
       if (val is Map) return val.length;
-      throw FormatException(
-          "TypeError: object of type '${val.runtimeType}' has no len()");
+      throw _PythonException(
+          'TypeError', "object of type '${val.runtimeType}' has no len()");
     }
 
     // Built-in type()
@@ -521,14 +645,13 @@ class LocalPythonInterpreter implements PythonRunner {
       }
     }
 
-    // Instance Method Call (e.g. p.speak()) or Class Instantiation (e.g. Person())
+    // Method Call / Class Instantiation / Function Call
     final funcMatch =
         RegExp(r'^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\((.*)\)$').firstMatch(expr);
     if (funcMatch != null && !expr.startsWith('[')) {
       final target = funcMatch.group(1)!;
       final argsStr = funcMatch.group(2)!.trim();
 
-      // Instance Method Call (e.g. p.speak())
       if (target.contains('.')) {
         final dotIdx = target.indexOf('.');
         final objName = target.substring(0, dotIdx).trim();
@@ -568,12 +691,10 @@ class LocalPythonInterpreter implements PythonRunner {
         }
       }
 
-      // Class Instantiation (e.g. Person())
       if (env.containsKey(target) && env[target] is _ClassDef) {
         return _Instance(env[target] as _ClassDef);
       }
 
-      // Regular Custom Function Execution
       if (env.containsKey(target) && env[target] is _FunctionDef) {
         final fDef = env[target] as _FunctionDef;
         final args = argsStr.isEmpty
@@ -600,7 +721,33 @@ class LocalPythonInterpreter implements PythonRunner {
       }
     }
 
-    // Dictionary Literal {"key": "value"}
+    // Bracket Indexing var["key"] or var[0]
+    final indexMatch =
+        RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*\[(.*)\]$').firstMatch(expr);
+    if (indexMatch != null) {
+      final varName = indexMatch.group(1)!;
+      final keyExpr = indexMatch.group(2)!;
+
+      if (env.containsKey(varName)) {
+        final collection = env[varName];
+        final keyOrIndex = _evaluateExpression(keyExpr, env);
+
+        if (collection is Map) {
+          final keyStr = keyOrIndex.toString();
+          if (!collection.containsKey(keyStr)) {
+            throw _PythonException('KeyError', "'$keyStr'");
+          }
+          return collection[keyStr];
+        } else if (collection is List && keyOrIndex is int) {
+          if (keyOrIndex < 0 || keyOrIndex >= collection.length) {
+            throw _PythonException('IndexError', 'list index out of range');
+          }
+          return collection[keyOrIndex];
+        }
+      }
+    }
+
+    // Dictionary Literal
     if (expr.startsWith('{') && expr.endsWith('}')) {
       final inner = expr.substring(1, expr.length - 1).trim();
       if (inner.isEmpty) return <String, dynamic>{};
@@ -618,30 +765,11 @@ class LocalPythonInterpreter implements PythonRunner {
       return map;
     }
 
-    // List Literal [1, 2, 3]
+    // List Literal
     if (expr.startsWith('[') && expr.endsWith(']')) {
       final inner = expr.substring(1, expr.length - 1).trim();
       if (inner.isEmpty) return [];
       return inner.split(',').map((e) => _evaluateExpression(e, env)).toList();
-    }
-
-    // Bracket Indexing var["key"] or var[0]
-    final indexMatch =
-        RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*\[(.*)\]$').firstMatch(expr);
-    if (indexMatch != null) {
-      final varName = indexMatch.group(1)!;
-      final keyExpr = indexMatch.group(2)!;
-
-      if (env.containsKey(varName)) {
-        final collection = env[varName];
-        final keyOrIndex = _evaluateExpression(keyExpr, env);
-
-        if (collection is Map) {
-          return collection[keyOrIndex.toString()];
-        } else if (collection is List && keyOrIndex is int) {
-          return collection[keyOrIndex];
-        }
-      }
     }
 
     // String literal
@@ -675,6 +803,6 @@ class LocalPythonInterpreter implements PythonRunner {
       return result;
     }
 
-    throw FormatException("NameError: name '$expr' is not defined");
+    throw _PythonException("NameError", "name '$expr' is not defined");
   }
 }

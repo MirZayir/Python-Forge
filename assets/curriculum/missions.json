@@ -563,5 +563,101 @@
         "type": "code"
       }
     ]
+  },
+  {
+    "moduleId": "mod_7",
+    "title": "Error Handling & Exceptions",
+    "description": "Master robust error handling using try-except blocks to catch division by zero, invalid value parsing, and missing keys.",
+    "order": 7,
+    "estimatedHours": 1.5,
+    "missions": [
+      {
+        "id": "m7_1",
+        "title": "Try Except Basics",
+        "description": "Prevent program crashes caused by division by zero using try-except.",
+        "objective": "Write a try-except block that tries x = 10 / 0 and catches ZeroDivisionError to print \"Cannot divide by zero\".",
+        "starterCode": "# Handle division by zero below",
+        "hints": [
+          "Write:\ntry:\n    x = 10 / 0\nexcept ZeroDivisionError:\n    print(\"Cannot divide by zero\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "try:\n    x = 10 / 0\nexcept ZeroDivisionError:\n    print(\"Cannot divide by zero\")"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m7_2",
+        "title": "Exception Types Quiz",
+        "description": "Identify standard Python exceptions.",
+        "objective": "Which exception is raised when trying to convert string \"abc\" into an integer using int(\"abc\")?",
+        "starterCode": "",
+        "hints": [
+          "Converting invalid string formats to numbers raises a ValueError."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["ValueError"]
+        },
+        "type": "mcq",
+        "mcqOptions": [
+          "TypeError",
+          "ValueError",
+          "KeyError",
+          "IndexError"
+        ]
+      },
+      {
+        "id": "m7_3",
+        "title": "Catching ValueError",
+        "description": "Handle invalid data casting gracefully using ValueError.",
+        "objective": "Write a try-except block attempting num = int(\"xyz\") and catching ValueError to print \"Invalid number\".",
+        "starterCode": "# Handle invalid integer conversion below",
+        "hints": [
+          "Write:\ntry:\n    num = int(\"xyz\")\nexcept ValueError:\n    print(\"Invalid number\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "try:\n    num = int(\"xyz\")\nexcept ValueError:\n    print(\"Invalid number\")"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m7_4",
+        "title": "KeyError Fill-In",
+        "description": "Handle missing dictionary key lookups.",
+        "objective": "Fill in the missing exception keyword to catch missing key lookups.",
+        "starterCode": "data = {}\ntry:\n    val = data[\"age\"]\nexcept ___:\n    print(\"Key not found\")",
+        "hints": [
+          "Missing dictionary key lookups raise a KeyError."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["KeyError"]
+        },
+        "type": "fill_in_blank"
+      },
+      {
+        "id": "m7_5",
+        "title": "Generic Except Block",
+        "description": "Catch any unhandled exception using the generic Exception fallback.",
+        "objective": "Write a try-except block trying y = 5 / 0 and catching Exception to print \"An error occurred\".",
+        "starterCode": "# Catch generic exception below",
+        "hints": [
+          "Write:\ntry:\n    y = 5 / 0\nexcept Exception:\n    print(\"An error occurred\")"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "try:\n    y = 5 / 0\nexcept Exception:\n    print(\"An error occurred\")"
+          ]
+        },
+        "type": "code"
+      }
+    ]
   }
 ]
