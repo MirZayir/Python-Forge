@@ -371,5 +371,101 @@
         "type": "code"
       }
     ]
+  },
+  {
+    "moduleId": "mod_5",
+    "title": "Functions & Scope",
+    "description": "Master modular programming using custom functions, parameters, return values, and built-ins like len() and type().",
+    "order": 5,
+    "estimatedHours": 1.5,
+    "missions": [
+      {
+        "id": "m5_1",
+        "title": "Defining Functions",
+        "description": "Functions let you group reusable blocks of code using the def keyword.",
+        "objective": "Define a function named greet() that prints \"Hello!\", then call greet().",
+        "starterCode": "# Define greet function below",
+        "hints": [
+          "Write:\ndef greet():\n    print(\"Hello!\")\n\ngreet()"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "def greet():\n    print(\"Hello!\")\n\ngreet()"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m5_2",
+        "title": "Function Parameters Quiz",
+        "description": "Understand how arguments are passed into function parameters.",
+        "objective": "What is the correct syntax to define a function double that accepts parameter x?",
+        "starterCode": "",
+        "hints": [
+          "Parameters go inside the parentheses after the function name."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["def double(x):"]
+        },
+        "type": "mcq",
+        "mcqOptions": [
+          "function double(x):",
+          "def double(x):",
+          "def double x:",
+          "create double(x):"
+        ]
+      },
+      {
+        "id": "m5_3",
+        "title": "Return Values",
+        "description": "Functions return calculated outputs back to the caller using return.",
+        "objective": "Define a function add(a, b) that returns a + b. Print the output of add(3, 4).",
+        "starterCode": "# Write add function below",
+        "hints": [
+          "Write:\ndef add(a, b):\n    return a + b\n\nprint(add(3, 4))"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "def add(a, b):\n    return a + b\n\nprint(add(3, 4))"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m5_4",
+        "title": "The len() Built-In",
+        "description": "Use len() to measure string length or collection item count.",
+        "objective": "Fill in the missing function name to measure length of items = [10, 20, 30].",
+        "starterCode": "items = [10, 20, 30]\nprint(___(items))",
+        "hints": [
+          "The built-in function to measure length is len."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["len"]
+        },
+        "type": "fill_in_blank"
+      },
+      {
+        "id": "m5_5",
+        "title": "Built-in Type Inspector",
+        "description": "Check variable data types dynamically using type().",
+        "objective": "Create message = \"Forge\". Print type(message).",
+        "starterCode": "# Inspect string type below",
+        "hints": [
+          "Write:\nmessage = \"Forge\"\nprint(type(message))"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "message = \"Forge\"\nprint(type(message))"
+          ]
+        },
+        "type": "code"
+      }
+    ]
   }
 ]
