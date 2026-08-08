@@ -1,17 +1,15 @@
-import '../../../core/progression/achievement_engine.dart';
-import '../../../core/progression/progress_manager.dart';
-import '../../../core/progression/xp_manager.dart';
-import '../../poc/data/repositories/curriculum_repository.dart';
-import '../domain/models/learner_profile.dart';
+import '../../../../core/progression/achievement_engine.dart';
+import '../../../../core/progression/progress_manager.dart';
+import '../../../../core/progression/xp_manager.dart';
+import '../../../poc/data/repositories/curriculum_repository.dart';
+import '../models/learner_profile.dart';
 
 class ProfileService {
-  final ProgressManager progressManager;
+  final ProgressManager progressManager = ProgressManager();
   final AchievementEngine _achievementEngine = AchievementEngine();
   final CurriculumRepository _curriculumRepository = CurriculumRepository();
 
-  ProfileService({
-    ProgressManager? progressManager,
-  }) : progressManager = progressManager ?? ProgressManager();
+  ProfileService();
 
   Future<LearnerProfile> buildProfile() async {
     return getProfile();

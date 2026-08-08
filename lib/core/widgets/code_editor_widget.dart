@@ -1,12 +1,78 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
-import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
-/// A reusable, professional code editor widget with line numbers and Python auto-indent.
+/// Performance-optimized TextEditingController that locks template starter code
+/// as a translucent, non-erasable placeholder and forces cursor to line 2.
+class FixedPrefixCodeController extends TextEditingController {
+  final String rawPrefix;
+  final TextStyle prefixStyle;
+  final TextStyle userTextStyle;
+
+  late final String prefix;
+  bool _isEnforcing = false;
+
+  FixedPrefixCodeController({
+    required this.rawPrefix,
+    required this.prefixStyle,
+    required this.userTextStyle,
+  })  : prefix = rawPrefix.endsWith('\n') ? rawPrefix : '$rawPrefix\n',
+        super(text: rawPrefix.endsWith('\n') ? rawPrefix : '$rawPrefix\n') {
+    addListener(_enforcePrefix);
+  }
+
+  void _enforcePrefix() {
+    if (prefix.isEmpty || _isEnforcing) return;
+
+    if (!text.startsWith(prefix)) {
+      _isEnforcing = true;
+      // If template comment was modified or deleted, restore prefix
+      String userPart = '';
+      if (text.length > prefix.length) {
+        userPart = text.substring(text.length - (text.length - prefix.length));
+      }
+      value = TextEditingValue(
+        text: prefix + userPart,
+        selection:
+            TextSelection.collapsed(offset: prefix.length + userPart.length),
+      );
+      _isEnforcing = false;
+    } else if (selection.start < prefix.length ||
+        selection.end < prefix.length) {
+      // Lock cursor position to after the template prefix (Line 2)
+      final newStart =
+          selection.start < prefix.length ? prefix.length : selection.start;
+      final newEnd =
+          selection.end < prefix.length ? prefix.length : selection.end;
+      _isEnforcing = true;
+      selection = TextSelection(baseOffset: newStart, extentOffset: newEnd);
+      _isEnforcing = false;
+    }
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    if (prefix.isEmpty || !text.startsWith(prefix)) {
+      return TextSpan(text: text, style: userTextStyle);
+    }
+
+    final userPart = text.substring(prefix.length);
+
+    return TextSpan(
+      children: [
+        TextSpan(text: prefix, style: prefixStyle),
+        TextSpan(text: userPart, style: userTextStyle),
+      ],
+    );
+  }
+}
+
+/// Interactive code editor with line numbering gutter and predictive typing enabled.
 class CodeEditorWidget extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
@@ -22,315 +88,192 @@ class CodeEditorWidget extends StatefulWidget {
 }
 
 class _CodeEditorWidgetState extends State<CodeEditorWidget> {
-  late final ScrollController _editorScrollController;
-  late final ScrollController _gutterScrollController;
-
-  int _lineCount = 1;
-  int _currentLine = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    _editorScrollController = ScrollController();
-    _gutterScrollController = ScrollController();
-
-    widget.controller.addListener(_onTextChanged);
-    _editorScrollController.addListener(_syncScroll);
-
-    // Initialize line count and active line
-    _onTextChanged();
-  }
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
-    widget.controller.removeListener(_onTextChanged);
-    _editorScrollController.removeListener(_syncScroll);
-
-    _editorScrollController.dispose();
-    _gutterScrollController.dispose();
+    _scrollController.dispose();
     super.dispose();
-  }
-
-  void _syncScroll() {
-    if (_editorScrollController.hasClients &&
-        _gutterScrollController.hasClients) {
-      _gutterScrollController.jumpTo(_editorScrollController.offset);
-    }
-  }
-
-  void _onTextChanged() {
-    final text = widget.controller.text;
-    final lines = '\n'.allMatches(text).length + 1;
-
-    final selection = widget.controller.selection;
-    int current = 1;
-    if (selection.isValid &&
-        selection.baseOffset >= 0 &&
-        selection.baseOffset <= text.length) {
-      final textBeforeCursor = text.substring(0, selection.baseOffset);
-      current = '\n'.allMatches(textBeforeCursor).length + 1;
-    }
-
-    if (_lineCount != lines || _currentLine != current) {
-      setState(() {
-        _lineCount = lines;
-        _currentLine = current;
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.crucibleGrey,
-        borderRadius: BorderRadius.circular(AppRadius.medium),
-        border: Border.all(
-          color: AppColors.syntaxGrey.withValues(alpha: 0.3),
-          width: 1.0,
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.medium),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background Layer: Gutter and Current Line Highlight
-          ListView.builder(
-            controller: _gutterScrollController,
-            padding: EdgeInsets.zero,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _lineCount,
-            itemBuilder: (context, index) {
-              final lineNumber = index + 1;
-              final isCurrent = lineNumber == _currentLine;
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, child) {
+        final text = widget.controller.text;
+        final lineCount = text.split('\n').length;
+        // Always display at least 3 lines, and keep 1 extra line ready ahead
+        final displayLineCount = (lineCount + 1) < 3 ? 3 : (lineCount + 1);
 
-              return Row(
-                children: [
-                  // Gutter
-                  Container(
-                    width: 48.0,
-                    height: 24.0, // Fixed height per line
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isCurrent
-                          ? AppColors.obsidian.withValues(alpha: 0.3)
-                          : Colors.transparent,
-                      border: Border(
-                        left: BorderSide(
-                          color: isCurrent
-                              ? AppColors.logicCyan
-                              : Colors.transparent,
-                          width: 2.0,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      '$lineNumber',
-                      style: AppTypography.code.copyWith(
-                        color: isCurrent
-                            ? AppColors.logicCyan
-                            : AppColors.syntaxGrey,
-                        fontSize: 14.0,
-                      ),
+        return Container(
+          color: const Color(0xFF181A20),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Line Number Gutter
+              Container(
+                width: 38,
+                padding: const EdgeInsets.only(
+                    top: 12.0, bottom: 12.0, left: 6.0, right: 8.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF14151A),
+                  border: Border(
+                    right: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      width: 1.0,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.small),
-                  // Active Line Background Highlight
-                  Expanded(
-                    child: Container(
-                      height: 24.0,
-                      color: isCurrent
-                          ? AppColors.forgeEmber.withValues(alpha: 0.1)
-                          : Colors.transparent,
+                ),
+                child: AnimatedBuilder(
+                  animation: _scrollController,
+                  builder: (context, _) {
+                    final double offset = _scrollController.hasClients
+                        ? _scrollController.offset
+                        : 0.0;
+                    return Transform.translate(
+                      offset: Offset(0, -offset),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: List.generate(displayLineCount, (index) {
+                          final lineNumber = index + 1;
+                          final isStarterLine = index == 0;
+                          return SizedBox(
+                            height:
+                                21.0, // Matches 14.0 * 1.5 line height of text editor
+                            child: Text(
+                              '$lineNumber',
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.w600,
+                                color: isStarterLine
+                                    ? Colors.white.withValues(alpha: 0.25)
+                                    : Colors.white.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Code Text Input Field
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: TextField(
+                    controller: widget.controller,
+                    focusNode: widget.focusNode,
+                    scrollController: _scrollController,
+                    maxLines: null,
+                    expands: true,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    enableSuggestions: true,
+                    autocorrect: true,
+                    style: AppTypography.code.copyWith(
+                      color: Colors.white,
+                      fontSize: 14.0,
+                      height: 1.5,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: 'Write your Python code here...',
+                      hintStyle: TextStyle(color: AppColors.syntaxGrey),
                     ),
                   ),
-                ],
-              );
-            },
-          ),
-
-          // Foreground Layer: Text Editor
-          Positioned(
-            left: 48.0 + AppSpacing.small,
-            top: 0,
-            bottom: 0,
-            right: 0,
-            child: TextField(
-              controller: widget.controller,
-              scrollController: _editorScrollController,
-              focusNode: widget.focusNode,
-              maxLines: null,
-              expands: true,
-              keyboardType: TextInputType.multiline,
-              autocorrect: false,
-              enableSuggestions: false,
-              textCapitalization: TextCapitalization.none,
-              inputFormatters: [
-                _PythonIndentFormatter(),
-              ],
-              style: AppTypography.code.copyWith(
-                color: Colors.white,
-                fontSize: 14.0,
-                height: 24.0 / 14.0, // Aligns with 24.0 height in gutter
+                ),
               ),
-              cursorColor: AppColors.forgeEmber,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.only(right: AppSpacing.medium),
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-/// The horizontal accessory bar docked directly above the system keyboard.
+/// Accessory toolbar pinned above the keyboard for typing special programming symbols.
 class CodeEditorAccessoryBar extends StatelessWidget {
   final TextEditingController controller;
 
   const CodeEditorAccessoryBar({super.key, required this.controller});
 
-  void _insertText(String text, {int offset = 0}) {
-    HapticFeedback.lightImpact();
+  void _insertText(String text) {
+    final selection = controller.selection;
+    final currentText = controller.text;
 
-    final int start = controller.selection.baseOffset;
-    final int end = controller.selection.extentOffset;
-
-    if (start < 0 || end < 0) {
-      controller.text += text;
-      controller.selection = TextSelection.collapsed(
-        offset: controller.text.length - offset,
+    if (selection.isValid) {
+      final newText = currentText.replaceRange(
+        selection.start,
+        selection.end,
+        text,
       );
-      return;
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: selection.start + text.length,
+        ),
+      );
+    } else {
+      controller.text += text;
     }
-
-    final int realStart = start < end ? start : end;
-    final int realEnd = start < end ? end : start;
-    final String currentText = controller.text;
-
-    final String newText = currentText.substring(0, realStart) +
-        text +
-        currentText.substring(realEnd);
-
-    controller.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(
-        offset: realStart + text.length - offset,
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final symbols = ['Tab', '()', '[]', '{}', ':', '=', '"', "'", '_', '+'];
+
     return Container(
-      height: 48.0,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: AppColors.crucibleGrey,
-        borderRadius: BorderRadius.all(Radius.circular(AppRadius.medium)),
+      height: 44,
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2026),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: ListView(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.small),
-        children: [
-          _AccessoryKey(label: 'Tab', onTap: () => _insertText('    ')),
-          _AccessoryKey(label: '()', onTap: () => _insertText('()', offset: 1)),
-          _AccessoryKey(label: '[]', onTap: () => _insertText('[]', offset: 1)),
-          _AccessoryKey(label: '{}', onTap: () => _insertText('{}', offset: 1)),
-          _AccessoryKey(label: ':', onTap: () => _insertText(':')),
-          _AccessoryKey(label: '=', onTap: () => _insertText(' = ')),
-          _AccessoryKey(label: '"', onTap: () => _insertText('""', offset: 1)),
-          _AccessoryKey(label: "'", onTap: () => _insertText("''", offset: 1)),
-          _AccessoryKey(label: ',', onTap: () => _insertText(', ')),
-          _AccessoryKey(label: '.', onTap: () => _insertText('.')),
-        ],
-      ),
-    );
-  }
-}
-
-/// A tactile button representing a single key in the accessory bar.
-class _AccessoryKey extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _AccessoryKey({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 4.0,
-        vertical: 6.0,
-      ),
-      child: Material(
-        color: AppColors.obsidian,
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.small),
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 40.0),
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            alignment: Alignment.center,
-            child: Text(
-              label,
-              style: AppTypography.code.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        itemCount: symbols.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final symbol = symbols[index];
+          return InkWell(
+            onTap: () {
+              if (symbol == 'Tab') {
+                _insertText('    ');
+              } else {
+                _insertText(symbol);
+              }
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  symbol,
+                  style: AppTypography.code.copyWith(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
-  }
-}
-
-/// Custom formatter that automatically applies Python indentation rules.
-class _PythonIndentFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.length - oldValue.text.length == 1) {
-      final int newOffset = newValue.selection.baseOffset;
-
-      if (newOffset > 0 && newValue.text[newOffset - 1] == '\n') {
-        final String textBeforeNewline =
-            newValue.text.substring(0, newOffset - 1);
-        final String lastLine = textBeforeNewline.split('\n').last;
-
-        if (lastLine.trimRight().endsWith(':')) {
-          final String existingIndent =
-              RegExp(r'^\s*').firstMatch(lastLine)?.group(0) ?? '';
-          final String insertString = '$existingIndent    ';
-
-          final String newText =
-              newValue.text.replaceRange(newOffset, newOffset, insertString);
-          return TextEditingValue(
-            text: newText,
-            selection: TextSelection.collapsed(
-                offset: newOffset + insertString.length),
-          );
-        } else {
-          final String existingIndent =
-              RegExp(r'^\s*').firstMatch(lastLine)?.group(0) ?? '';
-          if (existingIndent.isNotEmpty) {
-            final String newText = newValue.text
-                .replaceRange(newOffset, newOffset, existingIndent);
-            return TextEditingValue(
-              text: newText,
-              selection: TextSelection.collapsed(
-                  offset: newOffset + existingIndent.length),
-            );
-          }
-        }
-      }
-    }
-    return newValue;
   }
 }

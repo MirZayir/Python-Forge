@@ -1,8 +1,8 @@
 name: python_forge
-description: The interactive cognitive environment for Python development.
+description: "A premium, gamified Python learning app for Android built with Flutter."
 publish_to: 'none'
 
-version: 0.1.0+1
+version: 0.5.0+5
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

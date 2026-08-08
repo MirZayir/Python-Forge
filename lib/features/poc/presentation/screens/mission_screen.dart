@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/execution/execution_manager.dart';
 import '../../../../core/progression/achievement_engine.dart';
 import '../../../../core/progression/progress_manager.dart';
 import '../../../../core/progression/xp_manager.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/validation/answer_validator.dart';
 import '../../../../core/widgets/code_editor_widget.dart';
-import '../../../../core/widgets/forge_button.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
+import '../../data/repositories/curriculum_repository.dart';
 import '../../domain/models/mission.dart';
 
-/// Milestone 1 - Phase 1: Editor Skeleton (Premium UI Redesign).
-/// A robust, modern, and visually polished layout for the interactive learning environment.
+/// Interactive mission editor with translucent fixed template placeholders.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
 
@@ -27,22 +24,44 @@ class MissionScreen extends StatefulWidget {
 }
 
 class _MissionScreenState extends State<MissionScreen> {
+  // Vintage Retro Palette Constants
+  static const Color _creamMatte = Color(0xFFE8D8C9);
+  static const Color _slateBlue = Color(0xFF4B607F);
+  static const Color _retroOrange = Color(0xFFF3701E);
+  static const Color _textDark = Color(0xFF18181A);
+  static const Color _textMutedDark = Color(0xFF5A5A60);
+
   late final TextEditingController _codeController;
   late final FocusNode _editorFocusNode;
 
   final ExecutionManager _executionManager = ExecutionManager();
   final ProgressManager _progressManager = ProgressManager();
   final AchievementEngine _achievementEngine = AchievementEngine();
+  final CurriculumRepository _repository = CurriculumRepository();
 
   String _outputText = 'Ready to execute...';
   bool _isRunning = false;
+  int _attemptCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _codeController = TextEditingController(text: widget.mission.starterCode);
+    // Initialize controller with normalized prefix (always ends in \n to force cursor to line 2)
+    _codeController = FixedPrefixCodeController(
+      rawPrefix: widget.mission.starterCode,
+      prefixStyle: AppTypography.code.copyWith(
+        color: Colors.white
+            .withValues(alpha: 0.38), // Translucent matte placeholder
+        fontSize: 14.0,
+        height: 1.5,
+      ),
+      userTextStyle: AppTypography.code.copyWith(
+        color: Colors.white, // High-contrast user text
+        fontSize: 14.0,
+        height: 1.5,
+      ),
+    );
     _editorFocusNode = FocusNode();
-
     _editorFocusNode.addListener(_onFocusChanged);
   }
 
@@ -55,7 +74,31 @@ class _MissionScreenState extends State<MissionScreen> {
   }
 
   void _onFocusChanged() {
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Resolves the next sequential mission across all curriculum modules.
+  Future<Mission?> _getNextMission() async {
+    try {
+      final curriculum = await _repository.getCurriculum();
+      for (int i = 0; i < curriculum.modules.length; i++) {
+        final module = curriculum.modules[i];
+        for (int j = 0; j < module.missions.length; j++) {
+          if (module.missions[j].id == widget.mission.id) {
+            if (j + 1 < module.missions.length) {
+              return module.missions[j + 1];
+            }
+            if (i + 1 < curriculum.modules.length &&
+                curriculum.modules[i + 1].missions.isNotEmpty) {
+              return curriculum.modules[i + 1].missions.first;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> _runCode() async {
@@ -81,6 +124,7 @@ class _MissionScreenState extends State<MissionScreen> {
       if (isCorrect) {
         _outputText = '${executionResult.output}\n\n✅ Mission Complete!';
       } else {
+        _attemptCount++;
         _outputText = '${executionResult.output}\n\n❌ Not quite.\nTry again.';
       }
     });
@@ -91,7 +135,11 @@ class _MissionScreenState extends State<MissionScreen> {
 
       if (!mounted) return;
 
-      _showCompletionDialog();
+      final nextMission = await _getNextMission();
+
+      if (!mounted) return;
+
+      _showCompletionDialog(nextMission);
 
       for (final achievement in newlyUnlocked) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,12 +151,12 @@ class _MissionScreenState extends State<MissionScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            backgroundColor: AppColors.obsidian,
+            backgroundColor: _textDark,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.medium),
+              borderRadius: BorderRadius.circular(16),
               side: BorderSide(
-                color: AppColors.temperGreen.withOpacity(0.5),
+                color: _retroOrange.withValues(alpha: 0.5),
                 width: 1.0,
               ),
             ),
@@ -122,17 +170,17 @@ class _MissionScreenState extends State<MissionScreen> {
   void _showHint() {
     if (widget.mission.hints.isEmpty) return;
 
+    final hintIndex = (_attemptCount > 0 ? _attemptCount - 1 : 0) %
+        widget.mission.hints.length;
+    final hintText = widget.mission.hints[hintIndex];
+
     showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: AppColors.obsidian,
+          backgroundColor: _creamMatte,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-            side: BorderSide(
-              color: AppColors.logicCyan.withOpacity(0.5),
-              width: 1.0,
-            ),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.large),
@@ -142,25 +190,47 @@ class _MissionScreenState extends State<MissionScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lightbulb, color: AppColors.forgeEmber),
+                    const Icon(Icons.lightbulb_rounded, color: _retroOrange),
                     const SizedBox(width: AppSpacing.small),
                     Text(
                       'Mission Hint',
-                      style: AppTypography.title.copyWith(color: Colors.white),
+                      style: AppTypography.title.copyWith(
+                        color: _textDark,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.medium),
                 Text(
-                  widget.mission.hints.first,
-                  style:
-                      AppTypography.body.copyWith(color: AppColors.syntaxGrey),
+                  hintText,
+                  style: AppTypography.body.copyWith(
+                    color: _textMutedDark,
+                    height: 1.4,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.large),
-                ForgeButton(
-                  label: 'Got it',
-                  onPressed: () => Navigator.of(context).pop(),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    height: 48,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _retroOrange,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Got it',
+                        style: AppTypography.title.copyWith(
+                          color: Colors.white,
+                          fontSize: 15.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -170,7 +240,7 @@ class _MissionScreenState extends State<MissionScreen> {
     );
   }
 
-  void _showCompletionDialog() {
+  void _showCompletionDialog(Mission? nextMission) {
     final xpReward = XpManager.rewardFor(widget.mission);
 
     showDialog(
@@ -178,13 +248,9 @@ class _MissionScreenState extends State<MissionScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: AppColors.obsidian,
+          backgroundColor: _creamMatte,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-            side: BorderSide(
-              color: AppColors.forgeEmber.withOpacity(0.5),
-              width: 1.0,
-            ),
+            borderRadius: BorderRadius.circular(28),
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.large),
@@ -193,14 +259,17 @@ class _MissionScreenState extends State<MissionScreen> {
               children: [
                 Text(
                   '🎉 Mission Complete!',
-                  style: AppTypography.title.copyWith(color: Colors.white),
+                  style: AppTypography.title.copyWith(
+                    color: _textDark,
+                    fontSize: 22.0,
+                    fontWeight: FontWeight.w900,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.medium),
+                const SizedBox(height: AppSpacing.small),
                 Text(
                   'Great job completing this challenge.',
-                  style:
-                      AppTypography.body.copyWith(color: AppColors.syntaxGrey),
+                  style: AppTypography.body.copyWith(color: _textMutedDark),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.large),
@@ -210,27 +279,93 @@ class _MissionScreenState extends State<MissionScreen> {
                     vertical: AppSpacing.small,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.temperGreen.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.small),
-                    border: Border.all(
-                      color: AppColors.temperGreen.withOpacity(0.5),
-                    ),
+                    color: _retroOrange.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     '+$xpReward XP',
                     style: AppTypography.code.copyWith(
-                      color: AppColors.temperGreen,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18.0,
+                      color: _retroOrange,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20.0,
                     ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.large),
-                ForgeButton(
-                  label: 'Continue',
-                  onPressed: () {
+
+                // Primary Button: Direct Next Mission Continuation
+                if (nextMission != null) ...[
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MissionScreen(mission: nextMission),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 50,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: _retroOrange,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _retroOrange.withValues(alpha: 0.35),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Next Mission',
+                              style: AppTypography.title.copyWith(
+                                color: Colors.white,
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward_rounded,
+                                color: Colors.white, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.medium),
+                ],
+
+                // Secondary Button: Back to Dashboard
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
                     Navigator.of(context).pop();
                   },
+                  child: Container(
+                    height: 50,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: nextMission != null ? _slateBlue : _retroOrange,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Back to Dashboard',
+                        style: AppTypography.title.copyWith(
+                          color: Colors.white,
+                          fontSize: 15.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -249,13 +384,16 @@ class _MissionScreenState extends State<MissionScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 20),
-          onPressed: () => context.pop(),
+              color: _creamMatte, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           widget.mission.title,
-          style:
-              AppTypography.title.copyWith(color: Colors.white, fontSize: 18),
+          style: AppTypography.title.copyWith(
+            color: _creamMatte,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       body: Column(
@@ -266,7 +404,6 @@ class _MissionScreenState extends State<MissionScreen> {
                 final availableHeight = constraints.maxHeight;
 
                 const fixedElementsHeight = 280.0;
-
                 double remainingHeight = availableHeight - fixedElementsHeight;
                 if (remainingHeight < 250.0) {
                   remainingHeight = 250.0;
@@ -282,44 +419,50 @@ class _MissionScreenState extends State<MissionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Lesson Intro
                       if (widget.mission.description.isNotEmpty) ...[
                         Text(
                           widget.mission.description,
                           style: AppTypography.body.copyWith(
-                            color: AppColors.syntaxGrey,
+                            color: _creamMatte.withValues(alpha: 0.85),
                             height: 1.5,
-                            fontSize: 15.0,
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.medium),
                       ],
 
-                      // Challenge Objective
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.all(AppSpacing.medium),
+                      // Objective Bento Box Container Surface
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
                         decoration: BoxDecoration(
-                          color: AppColors.logicCyan.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(AppRadius.medium),
-                          border: Border.all(
-                            color: AppColors.logicCyan.withOpacity(0.3),
-                            width: 1.0,
-                          ),
+                          color: _creamMatte,
+                          borderRadius: BorderRadius.circular(22),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.track_changes_rounded,
-                                color: AppColors.logicCyan, size: 22),
-                            const SizedBox(width: AppSpacing.medium),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: _retroOrange,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.track_changes_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 widget.mission.objective,
                                 style: AppTypography.body.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
+                                  color: _textDark,
+                                  fontWeight: FontWeight.w800,
                                   height: 1.4,
+                                  fontSize: 14.0,
                                 ),
                               ),
                             ),
@@ -328,93 +471,101 @@ class _MissionScreenState extends State<MissionScreen> {
                       ),
                       const SizedBox(height: AppSpacing.large),
 
-                      // Code Editor Container
+                      // Code Editor Outer Frame
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
                         height: editorHeight,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF161618), // Deep IDE tone
-                          borderRadius: BorderRadius.circular(AppRadius.medium),
+                          color: _creamMatte,
+                          borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: _editorFocusNode.hasFocus
-                                ? AppColors.logicCyan.withOpacity(0.6)
-                                : Colors.white.withOpacity(0.08),
-                            width: 1.5,
+                                ? _retroOrange
+                                : Colors.transparent,
+                            width: 2.0,
                           ),
-                          boxShadow: _editorFocusNode.hasFocus
-                              ? [
-                                  BoxShadow(
-                                    color:
-                                        AppColors.logicCyan.withOpacity(0.15),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  )
-                                ]
-                              : [],
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadius.medium),
-                          child: CodeEditorWidget(
-                            controller: _codeController,
-                            focusNode: _editorFocusNode,
-                          ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.code_rounded,
+                                      color: _textDark, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'EDITOR',
+                                    style: AppTypography.body.copyWith(
+                                      color: _textDark,
+                                      fontSize: 11.0,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                    bottom: Radius.circular(24)),
+                                child: CodeEditorWidget(
+                                  controller: _codeController,
+                                  focusNode: _editorFocusNode,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: AppSpacing.medium),
 
-                      // Output Terminal
+                      // Terminal Console Panel Frame
                       SizedBox(
                         height: outputHeight,
                         child: Container(
                           decoration: BoxDecoration(
-                            color:
-                                const Color(0xFF09090A), // Pure terminal black
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.medium),
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.06)),
+                            color: _creamMatte,
+                            borderRadius: BorderRadius.circular(22),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Container(
+                              Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.medium,
-                                  vertical: 8.0,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.04),
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(AppRadius.medium),
-                                  ),
-                                ),
+                                    horizontal: 16, vertical: 10),
                                 child: Row(
                                   children: [
                                     const Icon(Icons.terminal_rounded,
-                                        color: AppColors.syntaxGrey, size: 14),
-                                    const SizedBox(width: 6),
+                                        color: _textDark, size: 16),
+                                    const SizedBox(width: 8),
                                     Text(
                                       'CONSOLE',
                                       style: AppTypography.body.copyWith(
-                                        color: AppColors.syntaxGrey,
-                                        fontSize: 10.0,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.5,
+                                        color: _textDark,
+                                        fontSize: 11.0,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.2,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                               Expanded(
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.all(AppSpacing.medium),
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                      left: 4, right: 4, bottom: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0D0D0E),
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  padding: const EdgeInsets.all(12.0),
                                   child: SingleChildScrollView(
                                     child: AnimatedSwitcher(
                                       duration:
                                           const Duration(milliseconds: 300),
-                                      switchInCurve: Curves.easeOut,
-                                      switchOutCurve: Curves.easeIn,
                                       child: Align(
                                         key: ValueKey<String>(_outputText),
                                         alignment: Alignment.topLeft,
@@ -422,13 +573,13 @@ class _MissionScreenState extends State<MissionScreen> {
                                           _outputText,
                                           style: AppTypography.code.copyWith(
                                             fontSize: 13.0,
-                                            height: 1.5,
+                                            height: 1.4,
                                             color: _outputText.contains('❌')
                                                 ? AppColors.slagRed
                                                 : (_outputText.contains('✅')
-                                                    ? AppColors.temperGreen
-                                                    : AppColors.syntaxGrey
-                                                        .withOpacity(0.9)),
+                                                    ? const Color(0xFF1DD1A1)
+                                                    : _creamMatte.withValues(
+                                                        alpha: 0.85)),
                                           ),
                                         ),
                                       ),
@@ -442,7 +593,7 @@ class _MissionScreenState extends State<MissionScreen> {
                       ),
                       const SizedBox(height: AppSpacing.large),
 
-                      // Action Buttons Row
+                      // Action Buttons
                       Row(
                         children: [
                           if (widget.mission.hints.isNotEmpty) ...[
@@ -450,27 +601,18 @@ class _MissionScreenState extends State<MissionScreen> {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: _showHint,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.large),
-                                splashColor:
-                                    AppColors.forgeEmber.withOpacity(0.2),
-                                highlightColor:
-                                    AppColors.forgeEmber.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
                                 child: Container(
-                                  height: 56,
-                                  width: 56,
+                                  height: 52,
+                                  width: 52,
                                   decoration: BoxDecoration(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.large),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.15),
-                                      width: 1.5,
-                                    ),
+                                    color: _creamMatte,
+                                    borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: const Icon(
                                     Icons.lightbulb_outline_rounded,
-                                    color: AppColors.forgeEmber,
-                                    size: 26,
+                                    color: _retroOrange,
+                                    size: 24,
                                   ),
                                 ),
                               ),
@@ -480,32 +622,20 @@ class _MissionScreenState extends State<MissionScreen> {
                           Expanded(
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 250),
-                              height: 56,
+                              height: 52,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: _isRunning
-                                      ? [
-                                          AppColors.syntaxGrey.withOpacity(0.5),
-                                          AppColors.syntaxGrey.withOpacity(0.5),
-                                        ]
-                                      : [
-                                          AppColors.temperGreen,
-                                          const Color(
-                                              0xFF238548), // Slightly darker green for depth
-                                        ],
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                ),
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.large),
+                                color: _isRunning
+                                    ? _creamMatte.withValues(alpha: 0.5)
+                                    : _retroOrange,
+                                borderRadius: BorderRadius.circular(20),
                                 boxShadow: _isRunning
                                     ? []
                                     : [
                                         BoxShadow(
-                                          color: AppColors.temperGreen
-                                              .withOpacity(0.3),
-                                          blurRadius: 16,
-                                          offset: const Offset(0, 6),
+                                          color: _retroOrange.withValues(
+                                              alpha: 0.35),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
                                         )
                                       ],
                               ),
@@ -513,13 +643,12 @@ class _MissionScreenState extends State<MissionScreen> {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   onTap: _isRunning ? null : _runCode,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.large),
+                                  borderRadius: BorderRadius.circular(20),
                                   child: Center(
                                     child: _isRunning
                                         ? const SizedBox(
-                                            height: 24,
-                                            width: 24,
+                                            height: 22,
+                                            width: 22,
                                             child: CircularProgressIndicator(
                                               color: Colors.white,
                                               strokeWidth: 2.5,
@@ -532,15 +661,15 @@ class _MissionScreenState extends State<MissionScreen> {
                                               const Icon(
                                                   Icons.play_arrow_rounded,
                                                   color: Colors.white,
-                                                  size: 28),
+                                                  size: 24),
                                               const SizedBox(width: 8),
                                               Text(
                                                 'Run Code',
                                                 style: AppTypography.title
                                                     .copyWith(
                                                   color: Colors.white,
-                                                  fontSize: 18.0,
-                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 16.0,
+                                                  fontWeight: FontWeight.w800,
                                                 ),
                                               ),
                                             ],

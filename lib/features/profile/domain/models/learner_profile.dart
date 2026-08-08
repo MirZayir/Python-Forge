@@ -1,3 +1,6 @@
+import '../../../../core/progression/achievement.dart';
+
+/// Represents the aggregated progress and statistics of a learner.
 class LearnerProfile {
   final int currentLevel;
   final int totalXp;
@@ -5,6 +8,7 @@ class LearnerProfile {
   final int achievementCount;
   final double overallCompletionPercentage;
   final String currentModuleTitle;
+  final List<Achievement> recentAchievements;
 
   const LearnerProfile({
     required this.currentLevel,
@@ -13,5 +17,6 @@ class LearnerProfile {
     required this.achievementCount,
     required this.overallCompletionPercentage,
     required this.currentModuleTitle,
+    required this.recentAchievements,
   });
 }
