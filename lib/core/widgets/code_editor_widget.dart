@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
 import '../theme/app_colors.dart';
 
-/// Controller that maintains a fixed uneditable prefix style for starter code,
-/// while applying active styling to user input.
+/// Controller that maintains a fixed uneditable prefix for starter code
+/// while applying real-time Python syntax highlighting to user input.
 class FixedPrefixCodeController extends TextEditingController {
   final String rawPrefix;
   final TextStyle prefixStyle;
@@ -23,21 +23,92 @@ class FixedPrefixCodeController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    if (rawPrefix.isEmpty) {
-      return TextSpan(text: text, style: userTextStyle);
-    }
-
-    if (text.startsWith(rawPrefix)) {
+    if (rawPrefix.isNotEmpty && text.startsWith(rawPrefix)) {
       final userText = text.substring(rawPrefix.length);
       return TextSpan(
         children: [
           TextSpan(text: rawPrefix, style: prefixStyle),
-          TextSpan(text: userText, style: userTextStyle),
+          ..._tokenizePython(userText, userTextStyle),
         ],
       );
     }
 
-    return TextSpan(text: text, style: userTextStyle);
+    return TextSpan(children: _tokenizePython(text, userTextStyle));
+  }
+
+  List<InlineSpan> _tokenizePython(String input, TextStyle baseStyle) {
+    if (input.isEmpty) return [];
+
+    final List<InlineSpan> spans = [];
+
+    // Syntax matching regex rules
+    final RegExp syntaxPattern = RegExp(
+      r'(#.*)|' // Group 1: Comments
+      r'(".*?"|'
+      "'.*?'"
+      r')|' // Group 2: Strings
+      r'(\b\d+(?:\.\d+)?\b)|' // Group 3: Numbers
+      r'(\b(?:def|class|return|if|elif|else|while|for|in|try|except|import|as|from|break|continue|pass|True|False|None|and|or|not|is)\b)|' // Group 4: Keywords
+      r'(\b(?:print|len|type|int|str|float|list|dict|range)\b)', // Group 5: Built-ins
+    );
+
+    int lastMatchEnd = 0;
+
+    for (final Match match in syntaxPattern.allMatches(input)) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: input.substring(lastMatchEnd, match.start),
+          style: baseStyle,
+        ));
+      }
+
+      final String matchedText = match.group(0)!;
+      TextStyle tokenStyle = baseStyle;
+
+      if (match.group(1) != null) {
+        // Comment (# comment)
+        tokenStyle = baseStyle.copyWith(
+          color: const Color(0xFF757575),
+          fontStyle: FontStyle.italic,
+        );
+      } else if (match.group(2) != null) {
+        // String ("hello" / 'world')
+        tokenStyle = baseStyle.copyWith(
+          color: const Color(0xFF2E7D32),
+          fontWeight: FontWeight.bold,
+        );
+      } else if (match.group(3) != null) {
+        // Number (123, 3.14)
+        tokenStyle = baseStyle.copyWith(
+          color: const Color(0xFFD84315),
+          fontWeight: FontWeight.bold,
+        );
+      } else if (match.group(4) != null) {
+        // Keyword (def, class, if, return)
+        tokenStyle = baseStyle.copyWith(
+          color: const Color(0xFF6A1B9A),
+          fontWeight: FontWeight.w900,
+        );
+      } else if (match.group(5) != null) {
+        // Built-in function (print, len, type)
+        tokenStyle = baseStyle.copyWith(
+          color: const Color(0xFF1565C0),
+          fontWeight: FontWeight.w900,
+        );
+      }
+
+      spans.add(TextSpan(text: matchedText, style: tokenStyle));
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < input.length) {
+      spans.add(TextSpan(
+        text: input.substring(lastMatchEnd),
+        style: baseStyle,
+      ));
+    }
+
+    return spans;
   }
 }
 
