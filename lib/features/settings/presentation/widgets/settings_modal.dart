@@ -44,7 +44,7 @@ class _SettingsModalState extends State<SettingsModal> {
     HapticService.heavyImpact();
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return Dialog(
           backgroundColor: AppColors.bgCream,
           shape: RoundedRectangleBorder(
@@ -96,7 +96,7 @@ class _SettingsModalState extends State<SettingsModal> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
+                        onTap: () => Navigator.of(dialogContext).pop(),
                         child: Container(
                           height: 48,
                           decoration: BoxDecoration(
@@ -121,12 +121,12 @@ class _SettingsModalState extends State<SettingsModal> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () async {
+                          final navigator = Navigator.of(context);
                           await _settingsService.resetAllProgress();
-                          if (mounted) {
-                            Navigator.of(context).pop();
-                            Navigator.of(context).pop();
-                            widget.onProgressReset();
-                          }
+                          if (!mounted) return;
+                          navigator.pop();
+                          navigator.pop();
+                          widget.onProgressReset();
                         },
                         child: Container(
                           height: 48,
