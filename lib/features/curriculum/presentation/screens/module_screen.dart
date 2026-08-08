@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/progression/progress_manager.dart';
+import '../../../../core/services/haptic_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
@@ -50,10 +51,14 @@ class _ModuleScreenState extends State<ModuleScreen> {
   Widget build(BuildContext context) {
     return ForgeScaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.bgCream,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () {
+            HapticService.lightImpact();
+            Navigator.of(context).pop();
+          },
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -112,6 +117,7 @@ class _ModuleScreenState extends State<ModuleScreen> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: GestureDetector(
         onTap: () {
+          HapticService.lightImpact();
           Navigator.of(context)
               .push(
                 MaterialPageRoute(

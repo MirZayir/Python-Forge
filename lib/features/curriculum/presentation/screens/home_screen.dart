@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/progression/streak_engine.dart';
+import '../../../../core/services/haptic_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../../../core/widgets/neubrutalist_card.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../settings/presentation/widgets/settings_modal.dart';
 import '../../data/repositories/curriculum_repository.dart';
 import '../../domain/models/curriculum.dart';
 import 'module_screen.dart';
 import 'quick_console_screen.dart';
 
-/// HomeScreen transformed into Neubrutalism style with interactive Console & Streak modals.
+/// HomeScreen transformed into Neubrutalism style with interactive Console, Streak, and Hero Banner.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -66,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showStreakActivityModal() {
+    HapticService.lightImpact();
     final streak = _streakData?.currentStreak ?? 0;
     final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     final todayIndex = DateTime.now().weekday - 1;
@@ -129,7 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
+                    onTap: () {
+                      HapticService.lightImpact();
+                      Navigator.of(context).pop();
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
@@ -243,14 +249,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return ForgeScaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.bgCream, // Cream top surface fix
+        backgroundColor: AppColors.bgCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleSpacing: AppSpacing.large,
+        titleSpacing: 12.0,
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             GestureDetector(
               onTap: () {
+                HapticService.lightImpact();
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const QuickConsoleScreen(),
@@ -258,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: AppColors.cardWhite,
                   borderRadius: BorderRadius.circular(10),
@@ -274,30 +282,71 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Icon(
                   Icons.terminal_rounded,
                   color: AppColors.borderBlack,
-                  size: 20,
+                  size: 18,
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            const Text(
-              'Python Forge',
-              style: TextStyle(
-                color: AppColors.borderBlack,
-                fontSize: 22.0,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
+            const SizedBox(width: 8),
+            const Flexible(
+              child: Text(
+                'Python Forge',
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  color: AppColors.borderBlack,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
           ],
         ),
         actions: [
+          // Settings Gear Button
+          GestureDetector(
+            onTap: () {
+              HapticService.lightImpact();
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                builder: (context) => SettingsModal(
+                  onProgressReset: () {
+                    _loadDashboardData();
+                  },
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              margin: const EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.borderBlack, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.shadowBlack,
+                    offset: Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.settings_rounded,
+                color: AppColors.borderBlack,
+                size: 18,
+              ),
+            ),
+          ),
+
+          // Streak Badge Button
           GestureDetector(
             onTap: _showStreakActivityModal,
             child: Center(
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                margin: const EdgeInsets.only(right: 6),
                 decoration: BoxDecoration(
                   color: AppColors.neuYellow,
                   borderRadius: BorderRadius.circular(10),
@@ -332,8 +381,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
+          // Profile Button
           GestureDetector(
             onTap: () {
+              HapticService.lightImpact();
               Navigator.of(context)
                   .push(
                     MaterialPageRoute(
@@ -343,8 +395,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   .then((_) => _loadDashboardData());
             },
             child: Container(
-              margin: const EdgeInsets.only(right: AppSpacing.large),
-              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
                 color: AppColors.cardWhite,
                 borderRadius: BorderRadius.circular(10),
@@ -360,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Icon(
                 Icons.person_rounded,
                 color: AppColors.borderBlack,
-                size: 20,
+                size: 18,
               ),
             ),
           ),
@@ -410,6 +462,7 @@ class _HomeScreenState extends State<HomeScreen> {
           parent: BouncingScrollPhysics(),
         ),
         children: [
+          // Bold Neubrutalist Title Banner
           const Text(
             'Forge code.\nMaster Python.',
             style: TextStyle(
@@ -421,84 +474,108 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardWhite,
-                    borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: AppColors.borderBlack, width: 2.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.shadowBlack,
-                        offset: Offset(3, 3),
-                        blurRadius: 0,
-                      ),
-                    ],
+
+          // Scaled-Up Hero Resume Learning Banner Card
+          GestureDetector(
+            onTap: () {
+              HapticService.lightImpact();
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (context) => ModuleScreen(module: firstModule),
+                    ),
+                  )
+                  .then((_) => _loadDashboardData());
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: AppColors.neuYellow,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderBlack, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.shadowBlack,
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
                   ),
-                  child: Row(
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.code_rounded,
-                          color: AppColors.borderBlack, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Continue ${firstModule.title}',
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                          style: const TextStyle(
-                            color: Color(0xFF666666),
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardWhite,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: AppColors.borderBlack, width: 1.8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.bolt_rounded,
+                                color: AppColors.borderBlack, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              'RESUME LEARNING',
+                              style: TextStyle(
+                                color: AppColors.borderBlack,
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardWhite,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: AppColors.borderBlack, width: 2.0),
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: AppColors.borderBlack,
+                          size: 22,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context)
-                      .push(
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ModuleScreen(module: firstModule),
-                        ),
-                      )
-                      .then((_) => _loadDashboardData());
-                },
-                child: Container(
-                  height: 52,
-                  width: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.neuYellow,
-                    borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: AppColors.borderBlack, width: 2.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.shadowBlack,
-                        offset: Offset(3, 3),
-                        blurRadius: 0,
-                      ),
-                    ],
+                  const SizedBox(height: 14),
+                  Text(
+                    firstModule.title,
+                    style: const TextStyle(
+                      color: AppColors.borderBlack,
+                      fontSize: 22.0,
+                      fontWeight: FontWeight.w900,
+                      height: 1.2,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: AppColors.borderBlack,
-                    size: 28,
+                  const SizedBox(height: 6),
+                  Text(
+                    '${firstModule.missions.length} Missions • Tap to continue journey',
+                    style: const TextStyle(
+                      color: Color(0xFF333333),
+                      fontSize: 13.0,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 28),
+
+          // "My Curriculum" Section Label
           const Text(
             'My Curriculum',
             style: TextStyle(
@@ -508,6 +585,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
+
+          // Folder-Tab Cards List
           ...modules.asMap().entries.map((entry) {
             final index = entry.key;
             final module = entry.value;
@@ -566,8 +645,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.loop_rounded;
       case 3:
         return Icons.dataset_rounded;
-      default:
+      case 4:
         return Icons.code_rounded;
+      case 5:
+        return Icons.category_rounded;
+      default:
+        return Icons.terminal_rounded;
     }
   }
 }
