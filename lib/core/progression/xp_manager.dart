@@ -1,4 +1,4 @@
-import '../../features/poc/domain/models/mission.dart';
+import '../../features/curriculum/domain/models/mission.dart';
 
 /// Centralized manager for calculating experience point (XP) rewards.
 class XpManager {

@@ -1,4 +1,4 @@
-import '../../features/poc/domain/models/mission.dart';
+import '../../features/curriculum/domain/models/mission.dart';
 import 'progress_manager.dart';
 
 /// Central engine evaluating mission prerequisites to determine unlock states.

@@ -1,21 +1,13 @@
-import '../../../core/progression/achievement_engine.dart';
-import '../../../core/progression/progress_manager.dart';
-import '../../../core/progression/xp_manager.dart';
-import '../../poc/data/repositories/curriculum_repository.dart';
-import '../domain/models/learner_profile.dart';
+import '../../../../core/progression/achievement_engine.dart';
+import '../../../../core/progression/progress_manager.dart';
+import '../../../../core/progression/xp_manager.dart';
+import '../../../curriculum/data/repositories/curriculum_repository.dart';
+import '../../domain/models/learner_profile.dart';
 
 class ProfileService {
-  final ProgressManager progressManager;
+  final ProgressManager _progressManager = ProgressManager();
   final AchievementEngine _achievementEngine = AchievementEngine();
   final CurriculumRepository _curriculumRepository = CurriculumRepository();
-
-  ProfileService({
-    ProgressManager? progressManager,
-  }) : progressManager = progressManager ?? ProgressManager();
-
-  Future<LearnerProfile> buildProfile() async {
-    return getProfile();
-  }
 
   Future<LearnerProfile> getProfile() async {
     final curriculum = await _curriculumRepository.getCurriculum();
@@ -34,7 +26,7 @@ class ProfileService {
 
       for (final mission in module.missions) {
         final isCompleted =
-            await progressManager.isMissionCompleted(mission.id);
+            await _progressManager.isMissionCompleted(mission.id);
         if (isCompleted) {
           completedMissions++;
           totalXp += XpManager.rewardFor(mission);

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/execution/execution_manager.dart';
+import '../../../../core/engine/execution_manager.dart';
 import '../../../../core/progression/achievement_engine.dart';
 import '../../../../core/progression/progress_manager.dart';
 import '../../../../core/progression/xp_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/validation/answer_validator.dart';
+import '../../../../core/engine/answer_validator.dart';
 import '../../../../core/widgets/code_editor_widget.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../data/repositories/curriculum_repository.dart';

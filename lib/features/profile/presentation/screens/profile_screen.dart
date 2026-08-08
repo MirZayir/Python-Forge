@@ -4,8 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
+import '../../data/services/profile_service.dart';
 import '../../domain/models/learner_profile.dart';
-import '../../domain/services/profile_service.dart';
 
 /// Learner profile dashboard matching the American Vintage Dark theme.
 class ProfileScreen extends StatefulWidget {

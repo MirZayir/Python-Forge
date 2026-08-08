@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/poc/domain/models/mission.dart';
-import '../../features/poc/presentation/screens/home_screen.dart';
-import '../../features/poc/presentation/screens/mission_screen.dart';
+import '../../features/curriculum/domain/models/mission.dart';
+import '../../features/curriculum/presentation/screens/home_screen.dart';
+import '../../features/curriculum/presentation/screens/mission_screen.dart';
 
 /// Provides the GoRouter instance for the application.
 final appRouterProvider = Provider<GoRouter>((ref) {
