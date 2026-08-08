@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../../core/progression/streak_engine.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../data/services/profile_service.dart';
 import '../../domain/models/learner_profile.dart';
+import 'achievements_screen.dart';
 
-/// Learner profile dashboard synced with live StreakEngine and Progress statistics.
+/// Learner profile dashboard transformed into Neubrutalism style.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -17,13 +17,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Vintage Retro Palette Constants
-  static const Color _cardDark = Color(0xFF1C1C1E);
-  static const Color _creamBeige = Color(0xFFE8D8C9);
-  static const Color _slateBlue = Color(0xFF4B607F);
-  static const Color _retroOrange = Color(0xFFF3701E);
-  static const Color _textMuted = Color(0xFFA0A0A5);
-
   final ProfileService _profileService = ProfileService();
   final StreakEngine _streakEngine = StreakEngine();
 
@@ -64,23 +57,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return ForgeScaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.bgCream,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: _creamBeige, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+        scrolledUnderElevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.cardWhite,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderBlack, width: 2.5),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppColors.shadowBlack,
+                  offset: Offset(2, 2),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.borderBlack,
+              size: 20,
+            ),
+          ),
         ),
-        title: Text(
+        title: const Text(
           'Learner Profile',
-          style: AppTypography.title.copyWith(
-            color: _creamBeige,
+          style: TextStyle(
+            color: AppColors.borderBlack,
             fontSize: 20.0,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),
-      body: _buildBody(),
+      body: Container(
+        color: AppColors.bgCream,
+        child: _buildBody(),
+      ),
     );
   }
 
@@ -88,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(_retroOrange),
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.borderBlack),
         ),
       );
     } else if (_errorMessage != null) {
@@ -97,7 +112,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           padding: const EdgeInsets.all(AppSpacing.medium),
           child: Text(
             'Failed to load profile: $_errorMessage',
-            style: AppTypography.body.copyWith(color: AppColors.slagRed),
+            style: const TextStyle(
+                color: AppColors.slagRed, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
         ),
@@ -115,15 +131,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         // Level & XP Hero Bento Card
         Container(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(22.0),
           decoration: BoxDecoration(
-            color: _slateBlue,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
+            color: AppColors.neuPurple,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.borderBlack, width: 2.5),
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: AppColors.shadowBlack,
+                offset: Offset(4, 4),
+                blurRadius: 0,
               ),
             ],
           ),
@@ -135,60 +152,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _retroOrange,
-                      borderRadius: BorderRadius.circular(14),
+                      color: AppColors.neuYellow,
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: AppColors.borderBlack, width: 2.0),
                     ),
                     child: Text(
                       'LEVEL ${p.currentLevel}',
-                      style: AppTypography.body.copyWith(
-                        color: Colors.white,
+                      style: const TextStyle(
+                        color: AppColors.borderBlack,
                         fontSize: 11.0,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.0,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Text(
                     '${p.totalXp} XP',
-                    style: AppTypography.title.copyWith(
-                      color: Colors.white,
+                    style: const TextStyle(
+                      color: AppColors.borderBlack,
                       fontSize: 28.0,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  const Text(
                     'Total Experience Points',
-                    style: AppTypography.body.copyWith(
-                      color: _creamBeige.withValues(alpha: 0.8),
+                    style: TextStyle(
+                      color: AppColors.borderBlack,
                       fontSize: 13.0,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.cardWhite,
                   shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.borderBlack, width: 2.5),
                 ),
                 child: const Icon(
                   Icons.military_tech_rounded,
-                  color: _creamBeige,
-                  size: 44.0,
+                  color: AppColors.borderBlack,
+                  size: 38.0,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.large),
+        const SizedBox(height: 20),
 
-        // Bento Statistics Grid (Missions, Streak, Achievements)
+        // Bento Statistics Grid
         Row(
           children: [
             Expanded(
@@ -196,30 +215,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label: 'Daily Streak',
                 value: '$streak Days',
                 icon: Icons.local_fire_department_rounded,
-                accentColor: _retroOrange,
+                accentColor: AppColors.neuYellow,
               ),
             ),
-            const SizedBox(width: AppSpacing.medium),
+            const SizedBox(width: 14),
             Expanded(
               child: _buildBentoStatCard(
                 label: 'Missions Done',
                 value: '${p.completedMissionsCount}',
                 icon: Icons.check_circle_rounded,
-                accentColor: _creamBeige,
+                accentColor: AppColors.neuGreen,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.large),
+        const SizedBox(height: 20),
 
         // Current Focus Bento Box
         Container(
-          padding: const EdgeInsets.all(22.0),
+          padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
-            color: _cardDark,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-                color: _creamBeige.withValues(alpha: 0.12), width: 1.2),
+            color: AppColors.cardWhite,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.borderBlack, width: 2.5),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadowBlack,
+                offset: Offset(4, 4),
+                blurRadius: 0,
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,105 +252,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'CURRENT FOCUS',
-                    style: AppTypography.body.copyWith(
-                      color: _textMuted,
+                    style: TextStyle(
+                      color: Color(0xFF666666),
                       fontSize: 11.0,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       letterSpacing: 1.0,
                     ),
                   ),
                   Text(
                     '${(p.overallCompletionPercentage * 100).toInt()}% Complete',
-                    style: AppTypography.code.copyWith(
-                      color: _retroOrange,
+                    style: const TextStyle(
+                      color: AppColors.borderBlack,
                       fontSize: 12.0,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(
                 p.currentModuleTitle,
-                style: AppTypography.title.copyWith(
-                  color: _creamBeige,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w800,
+                style: const TextStyle(
+                  color: AppColors.borderBlack,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  value: p.overallCompletionPercentage,
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
-                  valueColor: const AlwaysStoppedAnimation<Color>(_retroOrange),
-                  minHeight: 10.0,
+              const SizedBox(height: 14),
+              Container(
+                height: 14,
+                decoration: BoxDecoration(
+                  color: AppColors.bgCream,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.borderBlack, width: 2.0),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: p.overallCompletionPercentage,
+                    backgroundColor: Colors.transparent,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.neuYellow),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.large),
+        const SizedBox(height: 24),
 
-        // Recent Achievements List
+        // Recent Achievements Header
         if (p.recentAchievements.isNotEmpty) ...[
-          Text(
-            'Recent Achievements',
-            style: AppTypography.title.copyWith(
-              color: _creamBeige,
-              fontSize: 20.0,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Recent Achievements',
+                style: TextStyle(
+                  color: AppColors.borderBlack,
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AchievementsScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.neuYellow,
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: AppColors.borderBlack, width: 2.0),
+                  ),
+                  child: const Text(
+                    'See All',
+                    style: TextStyle(
+                      color: AppColors.borderBlack,
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.medium),
+          const SizedBox(height: 14),
           ...p.recentAchievements.map(
             (achievement) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.medium),
+              padding: const EdgeInsets.only(bottom: 14.0),
               child: Container(
-                padding: const EdgeInsets.all(18.0),
+                padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: _cardDark,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                      color: _retroOrange.withValues(alpha: 0.25), width: 1.2),
+                  color: AppColors.cardWhite,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.borderBlack, width: 2.5),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.shadowBlack,
+                      offset: Offset(3, 3),
+                      blurRadius: 0,
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: _retroOrange.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(16),
+                        color: AppColors.neuYellow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.borderBlack, width: 2.0),
                       ),
                       child: const Icon(
                         Icons.emoji_events_rounded,
-                        color: _retroOrange,
-                        size: 26.0,
+                        color: AppColors.borderBlack,
+                        size: 24.0,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.medium),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             achievement.title,
-                            style: AppTypography.title.copyWith(
-                              color: _creamBeige,
+                            style: const TextStyle(
+                              color: AppColors.borderBlack,
                               fontSize: 16.0,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             achievement.description,
-                            style: AppTypography.body.copyWith(
-                              color: _textMuted,
-                              fontSize: 13.0,
-                              height: 1.3,
+                            style: const TextStyle(
+                              color: Color(0xFF555555),
+                              fontSize: 12.0,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -348,12 +421,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color accentColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18.0),
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: _cardDark,
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: accentColor.withValues(alpha: 0.25), width: 1.2),
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderBlack, width: 2.5),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowBlack,
+            offset: Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,27 +440,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(12),
+              color: accentColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderBlack, width: 2.0),
             ),
-            child: Icon(icon, color: accentColor, size: 20),
+            child: Icon(icon, color: AppColors.borderBlack, size: 20),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Text(
             value,
-            style: AppTypography.title.copyWith(
-              color: _creamBeige,
-              fontSize: 22.0,
+            style: const TextStyle(
+              color: AppColors.borderBlack,
+              fontSize: 20.0,
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: AppTypography.body.copyWith(
-              color: _textMuted,
+            style: const TextStyle(
+              color: Color(0xFF666666),
               fontSize: 12.0,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
