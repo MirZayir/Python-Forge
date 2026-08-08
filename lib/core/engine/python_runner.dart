@@ -18,8 +18,20 @@ class _FunctionDef {
   _FunctionDef(this.params, this.bodyLines);
 }
 
-/// Native Dart interpreter with support for functions (def/return), scope,
-/// built-ins (len, type, range), lists, dictionaries, conditionals, and loops.
+class _ClassDef {
+  final String name;
+  final Map<String, _FunctionDef> methods = {};
+  _ClassDef(this.name);
+}
+
+class _Instance {
+  final _ClassDef classDef;
+  final Map<String, dynamic> fields = {};
+  _Instance(this.classDef);
+}
+
+/// Native Dart interpreter supporting Classes, Instances, Attributes, Methods,
+/// Functions, Scope, Built-ins (len, type, range), Lists, Dictionaries, Conditionals, and Loops.
 class LocalPythonInterpreter implements PythonRunner {
   @override
   Future<ExecutionResult> run(String code) async {
@@ -84,42 +96,88 @@ class LocalPythonInterpreter implements PythonRunner {
         return _LoopSignal.continueLoop;
       }
 
-      // Return statement inside function execution
       if (trimmed.startsWith('return ') || trimmed == 'return') {
         final expr = trimmed.length > 6 ? trimmed.substring(6).trim() : 'None';
         final val = expr.isNotEmpty ? _evaluateExpression(expr, env) : null;
         throw _ReturnSignal(val);
       }
 
-      // 1. Function Definition
+      // 1. Class Definition
+      if (trimmed.startsWith('class ') && trimmed.endsWith(':')) {
+        i = _handleClassDef(rawLines, i, env);
+        continue;
+      }
+
+      // 2. Function Definition
       if (trimmed.startsWith('def ') && trimmed.endsWith(':')) {
         i = _handleFunctionDef(rawLines, i, env);
         continue;
       }
 
-      // 2. FOR loop
+      // 3. FOR loop
       if (trimmed.startsWith('for ') && trimmed.endsWith(':')) {
         i = _handleForLoop(rawLines, i, env, stdout);
         continue;
       }
 
-      // 3. WHILE loop
+      // 4. WHILE loop
       if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
         i = _handleWhileLoop(rawLines, i, env, stdout);
         continue;
       }
 
-      // 4. IF / ELIF / ELSE
+      // 5. IF / ELIF / ELSE
       if (trimmed.startsWith('if ') && trimmed.endsWith(':')) {
         i = _handleIfStatement(rawLines, i, env, stdout);
         continue;
       }
 
-      // 5. Single line statement
+      // 6. Single line statement
       _executeLine(trimmed, env, stdout);
       i++;
     }
     return _LoopSignal.none;
+  }
+
+  int _handleClassDef(
+    List<String> rawLines,
+    int headerIndex,
+    Map<String, dynamic> env,
+  ) {
+    final header = _stripComment(rawLines[headerIndex]).trim();
+    final className = header.substring(6, header.length - 1).trim();
+
+    final blockIndices = _findIndentedBlockIndices(rawLines, headerIndex + 1);
+    final classDef = _ClassDef(className);
+
+    int curr = blockIndices[0];
+    while (curr < blockIndices[1]) {
+      final raw = rawLines[curr];
+      final line = _stripComment(raw).trim();
+      if (line.startsWith('def ') && line.endsWith(':')) {
+        final match = RegExp(r'^def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\):$')
+            .firstMatch(line);
+        if (match != null) {
+          final mName = match.group(1)!;
+          final paramsStr = match.group(2)!.trim();
+          final params = paramsStr.isEmpty
+              ? <String>[]
+              : paramsStr.split(',').map((p) => p.trim()).toList();
+
+          final methodBlockIndices =
+              _findIndentedBlockIndices(rawLines, curr + 1);
+          final methodLines =
+              rawLines.sublist(methodBlockIndices[0], methodBlockIndices[1]);
+          classDef.methods[mName] = _FunctionDef(params, methodLines);
+          curr = methodBlockIndices[1];
+          continue;
+        }
+      }
+      curr++;
+    }
+
+    env[className] = classDef;
+    return blockIndices[1];
   }
 
   int _handleFunctionDef(
@@ -291,34 +349,25 @@ class LocalPythonInterpreter implements PythonRunner {
       final evaluated = _evaluateExpression(content, env);
       stdout.writeln(evaluated);
     }
-    // 2. Standalone Function Call (e.g., greet())
-    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\s*\(.*\)$').hasMatch(line) &&
+    // 2. Instance Field Assignment (e.g., p.name = "Alice")
+    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\s*=')
+        .hasMatch(line)) {
+      final parts = line.split('=');
+      final target = parts[0].trim();
+      final expr = parts[1].trim();
+      final dotIdx = target.indexOf('.');
+      final objName = target.substring(0, dotIdx).trim();
+      final attrName = target.substring(dotIdx + 1).trim();
+
+      if (env.containsKey(objName) && env[objName] is _Instance) {
+        final inst = env[objName] as _Instance;
+        inst.fields[attrName] = _evaluateExpression(expr, env);
+      }
+    }
+    // 3. Standalone Function / Method Call (e.g., greet() or p.speak())
+    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_.]*\s*\(.*\)$').hasMatch(line) &&
         !line.contains('=')) {
       _evaluateExpression(line, env);
-    }
-    // 3. Method invocation (e.g., fruits.append("banana"))
-    else if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*\(.*\)$')
-        .hasMatch(line)) {
-      final dotIndex = line.indexOf('.');
-      final varName = line.substring(0, dotIndex).trim();
-      final methodCall = line.substring(dotIndex + 1).trim();
-
-      if (env.containsKey(varName)) {
-        final target = env[varName];
-        if (target is List) {
-          if (methodCall.startsWith('append(') && methodCall.endsWith(')')) {
-            final argStr =
-                methodCall.substring(7, methodCall.length - 1).trim();
-            final val = _evaluateExpression(argStr, env);
-            target.add(val);
-          } else if (methodCall.startsWith('pop(') &&
-              methodCall.endsWith(')')) {
-            if (target.isNotEmpty) {
-              target.removeLast();
-            }
-          }
-        }
-      }
     }
     // 4. Compound assignment (+=)
     else if (line.contains('+=')) {
@@ -453,18 +502,80 @@ class LocalPythonInterpreter implements PythonRunner {
       if (val is bool) return "<class 'bool'>";
       if (val is List) return "<class 'list'>";
       if (val is Map) return "<class 'dict'>";
+      if (val is _Instance) return "<class '${val.classDef.name}'>";
       return "<class '${val.runtimeType}'>";
     }
 
-    // Custom Function Execution
+    // Dot-notation field access (e.g. p.name)
+    if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*$')
+        .hasMatch(expr)) {
+      final dotIdx = expr.indexOf('.');
+      final objName = expr.substring(0, dotIdx).trim();
+      final attrName = expr.substring(dotIdx + 1).trim();
+
+      if (env.containsKey(objName) && env[objName] is _Instance) {
+        final inst = env[objName] as _Instance;
+        if (inst.fields.containsKey(attrName)) {
+          return inst.fields[attrName];
+        }
+      }
+    }
+
+    // Instance Method Call (e.g. p.speak()) or Class Instantiation (e.g. Person())
     final funcMatch =
-        RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)$').firstMatch(expr);
+        RegExp(r'^([a-zA-Z_][a-zA-Z0-9_.]*)\s*\((.*)\)$').firstMatch(expr);
     if (funcMatch != null && !expr.startsWith('[')) {
-      final funcName = funcMatch.group(1)!;
+      final target = funcMatch.group(1)!;
       final argsStr = funcMatch.group(2)!.trim();
 
-      if (env.containsKey(funcName) && env[funcName] is _FunctionDef) {
-        final fDef = env[funcName] as _FunctionDef;
+      // Instance Method Call (e.g. p.speak())
+      if (target.contains('.')) {
+        final dotIdx = target.indexOf('.');
+        final objName = target.substring(0, dotIdx).trim();
+        final mName = target.substring(dotIdx + 1).trim();
+
+        if (env.containsKey(objName) && env[objName] is _Instance) {
+          final inst = env[objName] as _Instance;
+          if (inst.classDef.methods.containsKey(mName)) {
+            final mDef = inst.classDef.methods[mName]!;
+            final args = argsStr.isEmpty
+                ? <dynamic>[]
+                : argsStr
+                    .split(',')
+                    .map((e) => _evaluateExpression(e.trim(), env))
+                    .toList();
+
+            final Map<String, dynamic> localEnv = Map.from(env);
+            if (mDef.params.isNotEmpty && mDef.params.first == 'self') {
+              localEnv['self'] = inst;
+              for (int p = 1;
+                  p < mDef.params.length && (p - 1) < args.length;
+                  p++) {
+                localEnv[mDef.params[p]] = args[p - 1];
+              }
+            }
+
+            final StringBuffer dummyStdout = StringBuffer();
+            try {
+              _executeBlock(mDef.bodyLines, 0, mDef.bodyLines.length, localEnv,
+                  dummyStdout);
+            } catch (e) {
+              if (e is _ReturnSignal) return e.value;
+              rethrow;
+            }
+            return null;
+          }
+        }
+      }
+
+      // Class Instantiation (e.g. Person())
+      if (env.containsKey(target) && env[target] is _ClassDef) {
+        return _Instance(env[target] as _ClassDef);
+      }
+
+      // Regular Custom Function Execution
+      if (env.containsKey(target) && env[target] is _FunctionDef) {
+        final fDef = env[target] as _FunctionDef;
         final args = argsStr.isEmpty
             ? <dynamic>[]
             : argsStr
@@ -482,9 +593,7 @@ class LocalPythonInterpreter implements PythonRunner {
           _executeBlock(
               fDef.bodyLines, 0, fDef.bodyLines.length, localEnv, dummyStdout);
         } catch (e) {
-          if (e is _ReturnSignal) {
-            return e.value;
-          }
+          if (e is _ReturnSignal) return e.value;
           rethrow;
         }
         return null;

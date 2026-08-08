@@ -467,5 +467,101 @@
         "type": "code"
       }
     ]
+  },
+  {
+    "moduleId": "mod_6",
+    "title": "Object-Oriented Programming",
+    "description": "Learn OOP principles by creating custom classes, instantiating objects, assigning attributes, and defining instance methods.",
+    "order": 6,
+    "estimatedHours": 2.0,
+    "missions": [
+      {
+        "id": "m6_1",
+        "title": "Defining Classes",
+        "description": "Classes serve as blueprints for creating custom object instances using the class keyword.",
+        "objective": "Define an empty class named Car using pass, then instantiate c = Car().",
+        "starterCode": "# Define Car class below",
+        "hints": [
+          "Write:\nclass Car:\n    pass\n\nc = Car()"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "class Car:\n    pass\n\nc = Car()"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m6_2",
+        "title": "Class Instance Quiz",
+        "description": "Understand how object instances are created in Python.",
+        "objective": "Given class Dog:, how do you create a new instance of Dog?",
+        "starterCode": "",
+        "hints": [
+          "Call the class name with parentheses, e.g. my_dog = Dog()"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["my_dog = Dog()"]
+        },
+        "type": "mcq",
+        "mcqOptions": [
+          "my_dog = new Dog()",
+          "my_dog = Dog()",
+          "my_dog = create Dog",
+          "my_dog = Dog.new()"
+        ]
+      },
+      {
+        "id": "m6_3",
+        "title": "Instance Attributes",
+        "description": "Assign dynamic data attributes to instances using dot notation.",
+        "objective": "Create an instance p = Person(). Set p.name = \"Alice\", then print p.name.",
+        "starterCode": "class Person:\n    pass\n\n# Instantiate and set name below",
+        "hints": [
+          "Write:\nclass Person:\n    pass\n\np = Person()\np.name = \"Alice\"\nprint(p.name)"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "class Person:\n    pass\n\np = Person()\np.name = \"Alice\"\nprint(p.name)"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m6_4",
+        "title": "Self Parameter Fill-In",
+        "description": "Instance methods in Python must take self as their first parameter.",
+        "objective": "Fill in the missing parameter keyword used in Python methods to reference the instance.",
+        "starterCode": "class Robot:\n    def speak(___):\n        print(\"Beep\")",
+        "hints": [
+          "The first parameter of a method in Python is conventionally named self."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["self"]
+        },
+        "type": "fill_in_blank"
+      },
+      {
+        "id": "m6_5",
+        "title": "Instance Methods",
+        "description": "Define methods inside a class to provide behavior to objects.",
+        "objective": "Define class Player with a method speak(self) that prints \"Ready\". Instantiate p = Player() and call p.speak().",
+        "starterCode": "# Define Player class with speak method below",
+        "hints": [
+          "Write:\nclass Player:\n    def speak(self):\n        print(\"Ready\")\n\np = Player()\np.speak()"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "class Player:\n    def speak(self):\n        print(\"Ready\")\n\np = Player()\np.speak()"
+          ]
+        },
+        "type": "code"
+      }
+    ]
   }
 ]
