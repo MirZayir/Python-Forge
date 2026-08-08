@@ -659,5 +659,101 @@
         "type": "code"
       }
     ]
+  },
+  {
+    "moduleId": "mod_8",
+    "title": "Modules & Standard Library",
+    "description": "Learn to organize and extend Python using built-in modules like math and random.",
+    "order": 8,
+    "estimatedHours": 1.5,
+    "missions": [
+      {
+        "id": "m8_1",
+        "title": "Importing Math",
+        "description": "Import built-in modules using the import keyword.",
+        "objective": "Import the math module and print math.sqrt(16).",
+        "starterCode": "# Import math and compute square root below",
+        "hints": [
+          "Write:\nimport math\nprint(math.sqrt(16))"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "import math\nprint(math.sqrt(16))"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m8_2",
+        "title": "Import Keyword Quiz",
+        "description": "Test module import syntax.",
+        "objective": "Which keyword is used to load a standard library module in Python?",
+        "starterCode": "",
+        "hints": [
+          "Python uses the import keyword to load external modules."
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["import"]
+        },
+        "type": "mcq",
+        "mcqOptions": [
+          "require",
+          "include",
+          "import",
+          "using"
+        ]
+      },
+      {
+        "id": "m8_3",
+        "title": "Math Floor",
+        "description": "Use math.floor() to round decimal values down to the nearest integer.",
+        "objective": "Import math and print math.floor(3.9).",
+        "starterCode": "# Floor float value below",
+        "hints": [
+          "Write:\nimport math\nprint(math.floor(3.9))"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "import math\nprint(math.floor(3.9))"
+          ]
+        },
+        "type": "code"
+      },
+      {
+        "id": "m8_4",
+        "title": "Import Fill-In",
+        "description": "Fill in missing module import syntax.",
+        "objective": "Fill in the missing keyword to import the random module.",
+        "starterCode": "___ random\nprint(random.randint(1, 10))",
+        "hints": [
+          "Enter the keyword import"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": ["import"]
+        },
+        "type": "fill_in_blank"
+      },
+      {
+        "id": "m8_5",
+        "title": "Math Ceil",
+        "description": "Use math.ceil() to round decimal values up to the nearest integer.",
+        "objective": "Import math and print math.ceil(2.1).",
+        "starterCode": "# Ceil float value below",
+        "hints": [
+          "Write:\nimport math\nprint(math.ceil(2.1))"
+        ],
+        "validationRules": {
+          "type": "exact_match",
+          "validAnswers": [
+            "import math\nprint(math.ceil(2.1))"
+          ]
+        },
+        "type": "code"
+      }
+    ]
   }
 ]

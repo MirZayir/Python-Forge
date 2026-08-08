@@ -1,3 +1,5 @@
+import 'dart:math' as dart_math;
+
 import 'execution_result.dart';
 
 /// Abstract contract for Python code execution backends.
@@ -39,8 +41,8 @@ class _Instance {
   _Instance(this.classDef);
 }
 
-/// Native Dart interpreter supporting try-except blocks, OOP, Functions, Scope,
-/// Built-ins (len, type, range, int, str), Lists, Dictionaries, Conditionals, and Loops.
+/// Native Dart interpreter supporting Modules (math, random), try-except blocks,
+/// OOP, Functions, Scope, Built-ins, Lists, Dictionaries, Conditionals, and Loops.
 class LocalPythonInterpreter implements PythonRunner {
   @override
   Future<ExecutionResult> run(String code) async {
@@ -111,43 +113,43 @@ class LocalPythonInterpreter implements PythonRunner {
         throw _ReturnSignal(val);
       }
 
-      // 1. Try / Except Blocks
+      // Try / Except Blocks
       if (trimmed == 'try:' || trimmed.startsWith('try:')) {
         i = _handleTryExcept(rawLines, i, env, stdout);
         continue;
       }
 
-      // 2. Class Definition
+      // Class Definition
       if (trimmed.startsWith('class ') && trimmed.endsWith(':')) {
         i = _handleClassDef(rawLines, i, env);
         continue;
       }
 
-      // 3. Function Definition
+      // Function Definition
       if (trimmed.startsWith('def ') && trimmed.endsWith(':')) {
         i = _handleFunctionDef(rawLines, i, env);
         continue;
       }
 
-      // 4. FOR loop
+      // FOR loop
       if (trimmed.startsWith('for ') && trimmed.endsWith(':')) {
         i = _handleForLoop(rawLines, i, env, stdout);
         continue;
       }
 
-      // 5. WHILE loop
+      // WHILE loop
       if (trimmed.startsWith('while ') && trimmed.endsWith(':')) {
         i = _handleWhileLoop(rawLines, i, env, stdout);
         continue;
       }
 
-      // 6. IF / ELIF / ELSE
+      // IF / ELIF / ELSE
       if (trimmed.startsWith('if ') && trimmed.endsWith(':')) {
         i = _handleIfStatement(rawLines, i, env, stdout);
         continue;
       }
 
-      // 7. Single line statement
+      // Single line statement
       _executeLine(trimmed, env, stdout);
       i++;
     }
@@ -442,7 +444,15 @@ class LocalPythonInterpreter implements PythonRunner {
 
   void _executeLine(
       String line, Map<String, dynamic> env, StringBuffer stdout) {
-    if (line.startsWith('print(') && line.endsWith(')')) {
+    if (line.startsWith('import ')) {
+      final moduleName = line.substring(7).trim();
+      if (moduleName == 'math' || moduleName == 'random') {
+        env[moduleName] = moduleName;
+      } else {
+        throw _PythonException(
+            "ModuleNotFoundError", "No module named '$moduleName'");
+      }
+    } else if (line.startsWith('print(') && line.endsWith(')')) {
       final content = line.substring(6, line.length - 1).trim();
       final evaluated = _evaluateExpression(content, env);
       stdout.writeln(evaluated);
@@ -570,6 +580,61 @@ class LocalPythonInterpreter implements PythonRunner {
 
     if (expr == 'True') return true;
     if (expr == 'False') return false;
+
+    // Standard Library: math module constants & functions
+    if (expr == 'math.pi') return dart_math.pi;
+
+    if (expr.startsWith('math.sqrt(') && expr.endsWith(')')) {
+      final inner = expr.substring(10, expr.length - 1).trim();
+      final val = _evaluateExpression(inner, env);
+      if (val is num) return dart_math.sqrt(val);
+      throw _PythonException(
+          'TypeError', "must be real number, not ${val.runtimeType}");
+    }
+
+    if (expr.startsWith('math.floor(') && expr.endsWith(')')) {
+      final inner = expr.substring(11, expr.length - 1).trim();
+      final val = _evaluateExpression(inner, env);
+      if (val is num) return val.floor();
+      throw _PythonException(
+          'TypeError', "must be real number, not ${val.runtimeType}");
+    }
+
+    if (expr.startsWith('math.ceil(') && expr.endsWith(')')) {
+      final inner = expr.substring(10, expr.length - 1).trim();
+      final val = _evaluateExpression(inner, env);
+      if (val is num) return val.ceil();
+      throw _PythonException(
+          'TypeError', "must be real number, not ${val.runtimeType}");
+    }
+
+    // Standard Library: random module functions
+    if (expr.startsWith('random.choice(') && expr.endsWith(')')) {
+      final inner = expr.substring(14, expr.length - 1).trim();
+      final listVal = _evaluateExpression(inner, env);
+      if (listVal is List && listVal.isNotEmpty) {
+        final rng = dart_math.Random();
+        return listVal[rng.nextInt(listVal.length)];
+      }
+      throw _PythonException(
+          'IndexError', 'cannot choose from an empty sequence');
+    }
+
+    if (expr.startsWith('random.randint(') && expr.endsWith(')')) {
+      final inner = expr.substring(15, expr.length - 1).trim();
+      final parts = inner
+          .split(',')
+          .map((e) => _evaluateExpression(e.trim(), env))
+          .toList();
+      if (parts.length == 2 && parts[0] is int && parts[1] is int) {
+        final min = parts[0] as int;
+        final max = parts[1] as int;
+        final rng = dart_math.Random();
+        return min + rng.nextInt(max - min + 1);
+      }
+      throw _PythonException(
+          'TypeError', 'randint() requires two integer arguments');
+    }
 
     // Division / ZeroDivisionError check
     if (expr.contains('/') && !expr.startsWith('"') && !expr.startsWith("'")) {
