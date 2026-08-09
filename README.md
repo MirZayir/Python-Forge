@@ -42,6 +42,6 @@ A premium, gamified mobile application designed for learning Python from scratch
 ## 🚀 Getting Started
 
 1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/MirZayir/Python-Forge.git](https://github.com/MirZayir/Python-Forge.git)
-   cd Python-Forge
+```bash
+git clone [https://github.com/MirZayir/Python-Forge.git](https://github.com/MirZayir/Python-Forge.git)
+cd Python-Forge
