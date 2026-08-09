@@ -1,21 +1,18 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/settings_service.dart';
 import '../theme/app_colors.dart';
 
-/// Controller that maintains a fixed uneditable prefix for starter code
-/// while applying real-time Python syntax highlighting to user input.
-class FixedPrefixCodeController extends TextEditingController {
-  final String rawPrefix;
-  final TextStyle prefixStyle;
+/// Python syntax highlighting controller for user-typed code.
+class PythonCodeController extends TextEditingController {
   final TextStyle userTextStyle;
 
-  FixedPrefixCodeController({
-    required this.rawPrefix,
-    required this.prefixStyle,
+  PythonCodeController({
     required this.userTextStyle,
-    String? text,
-  }) : super(text: text ?? rawPrefix);
+    super.text,
+  });
 
   @override
   TextSpan buildTextSpan({
@@ -23,16 +20,6 @@ class FixedPrefixCodeController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    if (rawPrefix.isNotEmpty && text.startsWith(rawPrefix)) {
-      final userText = text.substring(rawPrefix.length);
-      return TextSpan(
-        children: [
-          TextSpan(text: rawPrefix, style: prefixStyle),
-          ..._tokenizePython(userText, userTextStyle),
-        ],
-      );
-    }
-
     return TextSpan(children: _tokenizePython(text, userTextStyle));
   }
 
@@ -41,7 +28,6 @@ class FixedPrefixCodeController extends TextEditingController {
 
     final List<InlineSpan> spans = [];
 
-    // Syntax matching regex rules
     final RegExp syntaxPattern = RegExp(
       r'(#.*)|' // Group 1: Comments
       r'(".*?"|'
@@ -66,34 +52,33 @@ class FixedPrefixCodeController extends TextEditingController {
       TextStyle tokenStyle = baseStyle;
 
       if (match.group(1) != null) {
-        // Comment (# comment)
         tokenStyle = baseStyle.copyWith(
           color: const Color(0xFF757575),
-          fontStyle: FontStyle.italic,
+          fontFamily: 'monospace',
         );
       } else if (match.group(2) != null) {
-        // String ("hello" / 'world')
         tokenStyle = baseStyle.copyWith(
           color: const Color(0xFF2E7D32),
           fontWeight: FontWeight.bold,
+          fontFamily: 'monospace',
         );
       } else if (match.group(3) != null) {
-        // Number (123, 3.14)
         tokenStyle = baseStyle.copyWith(
           color: const Color(0xFFD84315),
           fontWeight: FontWeight.bold,
+          fontFamily: 'monospace',
         );
       } else if (match.group(4) != null) {
-        // Keyword (def, class, if, return)
         tokenStyle = baseStyle.copyWith(
           color: const Color(0xFF6A1B9A),
           fontWeight: FontWeight.w900,
+          fontFamily: 'monospace',
         );
       } else if (match.group(5) != null) {
-        // Built-in function (print, len, type)
         tokenStyle = baseStyle.copyWith(
           color: const Color(0xFF1565C0),
           fontWeight: FontWeight.w900,
+          fontFamily: 'monospace',
         );
       }
 
@@ -112,15 +97,17 @@ class FixedPrefixCodeController extends TextEditingController {
   }
 }
 
-/// Neubrutalist code editor widget with dynamic font scaling support.
+/// Neubrutalist code editor with horizontal scrolling, translucent placeholder, and synced line numbers.
 class CodeEditorWidget extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
+  final String? hintText;
 
   const CodeEditorWidget({
     super.key,
     required this.controller,
     required this.focusNode,
+    this.hintText,
   });
 
   @override
@@ -129,44 +116,157 @@ class CodeEditorWidget extends StatefulWidget {
 
 class _CodeEditorWidgetState extends State<CodeEditorWidget> {
   final SettingsService _settingsService = SettingsService();
-  double _fontSize = 14.0;
+
+  double get _fontSize => SettingsService.editorFontSize.value;
 
   @override
   void initState() {
     super.initState();
-    _loadFontSize();
+    _settingsService.getEditorFontSize();
+    SettingsService.editorFontSize.addListener(_onSettingsChange);
+    widget.controller.addListener(_onTextChange);
   }
 
-  Future<void> _loadFontSize() async {
-    final size = await _settingsService.getEditorFontSize();
+  @override
+  void dispose() {
+    SettingsService.editorFontSize.removeListener(_onSettingsChange);
+    widget.controller.removeListener(_onTextChange);
+    super.dispose();
+  }
+
+  void _onSettingsChange() {
     if (mounted) {
-      setState(() {
-        _fontSize = size;
-      });
+      setState(() {});
     }
+  }
+
+  void _onTextChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _focusEditor() {
+    widget.focusNode.requestFocus();
+    SystemChannels.textInput.invokeMethod('TextInput.show');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.cardWhite,
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        maxLines: null,
-        expands: true,
-        keyboardType: TextInputType.multiline,
-        autocorrect: false,
-        enableSuggestions: false,
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: _fontSize,
-          color: AppColors.borderBlack,
-          height: 1.5,
-        ),
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.all(12),
-          border: InputBorder.none,
+    final double lineHeight = _fontSize * 1.5;
+    final int typedLines = '\n'.allMatches(widget.controller.text).length + 1;
+    final int totalGutterLines = math.max(typedLines + 2, 3);
+
+    return GestureDetector(
+      onTap: _focusEditor,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        color: AppColors.cardWhite,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Line Numbers Gutter
+                    GestureDetector(
+                      onTap: _focusEditor,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        width: 40,
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        decoration: const BoxDecoration(
+                          color: AppColors.bgCream,
+                          border: Border(
+                            right: BorderSide(
+                              color: AppColors.borderBlack,
+                              width: 2.0,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          children: List.generate(totalGutterLines, (index) {
+                            final bool isTypedLine = index < typedLines;
+                            return SizedBox(
+                              height: lineHeight,
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: _fontSize * 0.85,
+                                    fontWeight: FontWeight.bold,
+                                    color: isTypedLine
+                                        ? AppColors.borderBlack
+                                        : AppColors.borderBlack
+                                            .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+                    // Non-wrapping Code Text Field with Horizontal Scroll
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        // A bounded width is required: inside a horizontal
+                        // viewport an unbounded TextField makes InputDecorator
+                        // assert during layout, which blanks the whole screen.
+                        child: SizedBox(
+                          width: math.max(
+                            constraints.maxWidth - 40,
+                            600.0,
+                          ),
+                          child: TextField(
+                            controller: widget.controller,
+                            focusNode: widget.focusNode,
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: _fontSize,
+                              color: AppColors.borderBlack,
+                              fontWeight: FontWeight.bold,
+                              height: 1.5,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: widget.hintText,
+                              hintMaxLines: 1,
+                              hintStyle: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: _fontSize,
+                                color: const Color(0xFF757575)
+                                    .withValues(alpha: 0.6),
+                                height: 1.5,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                            scrollPhysics: const NeverScrollableScrollPhysics(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

@@ -22,9 +22,8 @@ class ForgeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = isPrimary
-        ? AppColors.forgeEmber
-        : AppColors.crucibleGrey;
+    final backgroundColor =
+        isPrimary ? AppColors.forgeEmber : AppColors.crucibleGrey;
     final textColor = isPrimary ? AppColors.obsidian : Colors.white;
 
     return ElevatedButton(

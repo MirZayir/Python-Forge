@@ -139,8 +139,8 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
                           bottom: BorderSide(
                               color: AppColors.borderBlack, width: 2.5)),
                     ),
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         Icon(Icons.code_rounded,
                             color: AppColors.borderBlack, size: 18),
                         SizedBox(width: 8),

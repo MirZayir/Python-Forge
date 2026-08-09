@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/engine/answer_validator.dart';
 import '../../../../core/engine/execution_manager.dart';
+import '../../../../core/engine/execution_result.dart';
+import '../../../../core/progression/achievement_catalog.dart';
 import '../../../../core/progression/achievement_engine.dart';
+import '../../../../core/progression/learning_progress.dart';
 import '../../../../core/progression/progress_manager.dart';
 import '../../../../core/progression/streak_engine.dart';
 import '../../../../core/progression/xp_manager.dart';
@@ -11,7 +14,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/code_editor_widget.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
-import '../../data/repositories/curriculum_repository.dart';
 import '../../domain/models/mission.dart';
 
 /// Neubrutalist mission screen supporting Code, MCQ, and Fill-in-the-Blank challenges.
@@ -31,7 +33,8 @@ class _MissionScreenState extends State<MissionScreen> {
   final ExecutionManager _executionManager = ExecutionManager();
   final ProgressManager _progressManager = ProgressManager();
   final AchievementEngine _achievementEngine = AchievementEngine();
-  final CurriculumRepository _repository = CurriculumRepository();
+  final LearningProgressService _learningProgressService =
+      LearningProgressService();
   final StreakEngine _streakEngine = StreakEngine();
 
   String _outputText = 'Ready to execute...';
@@ -45,14 +48,7 @@ class _MissionScreenState extends State<MissionScreen> {
   void initState() {
     super.initState();
 
-    _codeController = FixedPrefixCodeController(
-      rawPrefix: widget.mission.starterCode,
-      prefixStyle: const TextStyle(
-        color: Color(0xFF888888),
-        fontFamily: 'monospace',
-        fontSize: 14.0,
-        height: 1.5,
-      ),
+    _codeController = PythonCodeController(
       userTextStyle: const TextStyle(
         color: AppColors.borderBlack,
         fontFamily: 'monospace',
@@ -82,32 +78,10 @@ class _MissionScreenState extends State<MissionScreen> {
     }
   }
 
-  Future<Mission?> _getNextMission() async {
-    try {
-      final curriculum = await _repository.getCurriculum();
-      for (int i = 0; i < curriculum.modules.length; i++) {
-        final module = curriculum.modules[i];
-        for (int j = 0; j < module.missions.length; j++) {
-          if (module.missions[j].id == widget.mission.id) {
-            if (j + 1 < module.missions.length) {
-              return module.missions[j + 1];
-            }
-            if (i + 1 < curriculum.modules.length &&
-                curriculum.modules[i + 1].missions.isNotEmpty) {
-              return curriculum.modules[i + 1].missions.first;
-            }
-          }
-        }
-      }
-    } catch (_) {}
-    return null;
-  }
-
   Future<void> _submitAnswer() async {
     if (_isRunning) return;
 
     _editorFocusNode.unfocus();
-
     setState(() {
       _isRunning = true;
       _outputText = '> Evaluating answer...';
@@ -115,16 +89,29 @@ class _MissionScreenState extends State<MissionScreen> {
 
     String submittedCode = _codeController.text;
     String executionOutput = '';
+    var executionFailed = false;
+    ExecutionResult? executionResult;
 
-    if (widget.mission.type == MissionType.mcq) {
-      submittedCode = _selectedMcqOption ?? '';
-      executionOutput = _selectedMcqOption ?? 'No option selected';
-    } else if (widget.mission.type == MissionType.fillInBlank) {
-      submittedCode = _blankInputController.text.trim();
-      executionOutput = submittedCode;
-    } else {
-      final res = await _executionManager.execute(_codeController.text);
-      executionOutput = res.output;
+    try {
+      if (widget.mission.type == MissionType.mcq) {
+        submittedCode = _selectedMcqOption ?? '';
+        executionOutput = _selectedMcqOption ?? 'No option selected';
+      } else if (widget.mission.type == MissionType.fillInBlank) {
+        submittedCode = _blankInputController.text.trim();
+        executionOutput = submittedCode;
+      } else {
+        if (widget.mission.starterCode.isNotEmpty &&
+            !widget.mission.starterCode.startsWith('#') &&
+            !submittedCode.contains(widget.mission.starterCode)) {
+          submittedCode = '${widget.mission.starterCode}\n$submittedCode';
+        }
+        executionResult = await _executionManager.execute(submittedCode);
+        executionOutput = executionResult.output;
+        executionFailed = !executionResult.success || executionResult.hasError;
+      }
+    } catch (error) {
+      executionFailed = true;
+      executionOutput = 'Python engine failure: $error';
     }
 
     if (!mounted) return;
@@ -133,6 +120,7 @@ class _MissionScreenState extends State<MissionScreen> {
       fullCode: submittedCode,
       actualOutput: executionOutput,
       mission: widget.mission,
+      isError: executionFailed,
     );
 
     setState(() {
@@ -146,13 +134,19 @@ class _MissionScreenState extends State<MissionScreen> {
     if (validationResult.status == ValidationStatus.correct) {
       HapticService.successPattern();
       await _progressManager.completeMission(widget.mission.id);
-      await _streakEngine.recordActivity();
-      final newlyUnlocked = await _achievementEngine.evaluateAndUnlock();
+      final streak = await _streakEngine.recordActivity();
+      final progress = await _learningProgressService.load();
+      final newlyUnlocked = await _achievementEngine.evaluateAndUnlock(
+        AchievementMetrics(
+          completedMissionCount: progress.completedMissionCount,
+          totalXp: progress.totalXp,
+          currentStreak: streak.currentStreak,
+        ),
+      );
 
       if (!mounted) return;
 
-      final nextMission = await _getNextMission();
-
+      final nextMission = progress.missionAfter(widget.mission.id);
       if (!mounted) return;
 
       _showCompletionDialog(nextMission);
@@ -206,9 +200,9 @@ class _MissionScreenState extends State<MissionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.lightbulb_rounded,
                         color: AppColors.borderBlack, size: 24),
                     SizedBox(width: AppSpacing.small),
@@ -352,9 +346,9 @@ class _MissionScreenState extends State<MissionScreen> {
                           ),
                         ],
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Text(
                             'Next Mission',
                             style: TextStyle(
@@ -676,8 +670,8 @@ class _MissionScreenState extends State<MissionScreen> {
                         bottom: BorderSide(
                             color: AppColors.borderBlack, width: 2.5)),
                   ),
-                  child: Row(
-                    children: const [
+                  child: const Row(
+                    children: [
                       Icon(Icons.code_rounded,
                           color: AppColors.borderBlack, size: 16),
                       SizedBox(width: 8),
@@ -700,6 +694,7 @@ class _MissionScreenState extends State<MissionScreen> {
                     child: CodeEditorWidget(
                       controller: _codeController,
                       focusNode: _editorFocusNode,
+                      hintText: widget.mission.starterCode,
                     ),
                   ),
                 ),
@@ -734,8 +729,8 @@ class _MissionScreenState extends State<MissionScreen> {
                     borderRadius:
                         BorderRadius.vertical(top: Radius.circular(13)),
                   ),
-                  child: Row(
-                    children: const [
+                  child: const Row(
+                    children: [
                       Icon(Icons.terminal_rounded,
                           color: AppColors.neuYellow, size: 16),
                       SizedBox(width: 8),
@@ -872,8 +867,8 @@ class _MissionScreenState extends State<MissionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
+          const Row(
+            children: [
               Icon(Icons.edit_note_rounded,
                   color: AppColors.borderBlack, size: 20),
               SizedBox(width: 8),

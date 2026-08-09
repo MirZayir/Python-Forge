@@ -1,56 +1,36 @@
 import '../../../../core/progression/achievement_engine.dart';
-import '../../../../core/progression/progress_manager.dart';
-import '../../../../core/progression/xp_manager.dart';
-import '../../../curriculum/data/repositories/curriculum_repository.dart';
+import '../../../../core/progression/learning_progress.dart';
 import '../../domain/models/learner_profile.dart';
 
+/// Builds the learner profile from the single derived progress source.
 class ProfileService {
-  final ProgressManager _progressManager = ProgressManager();
-  final AchievementEngine _achievementEngine = AchievementEngine();
-  final CurriculumRepository _curriculumRepository = CurriculumRepository();
+  final LearningProgressService _progressService;
+  final AchievementEngine _achievementEngine;
+
+  ProfileService({
+    LearningProgressService? progressService,
+    AchievementEngine? achievementEngine,
+  })  : _progressService = progressService ?? LearningProgressService(),
+        _achievementEngine = achievementEngine ?? AchievementEngine();
 
   Future<LearnerProfile> getProfile() async {
-    final curriculum = await _curriculumRepository.getCurriculum();
+    final progress = await _progressService.load();
     final unlockedAchievements =
         await _achievementEngine.getUnlockedAchievements();
 
-    int totalXp = 0;
-    int completedMissions = 0;
-    int totalMissions = 0;
-    String currentModuleTitle = "All Modules Completed";
-    bool foundCurrentModule = false;
-
-    for (final module in curriculum.modules) {
-      bool moduleCompleted = true;
-      totalMissions += module.missions.length;
-
-      for (final mission in module.missions) {
-        final isCompleted =
-            await _progressManager.isMissionCompleted(mission.id);
-        if (isCompleted) {
-          completedMissions++;
-          totalXp += XpManager.rewardFor(mission);
-        } else {
-          moduleCompleted = false;
-        }
-      }
-
-      if (!moduleCompleted && !foundCurrentModule) {
-        currentModuleTitle = module.title;
-        foundCurrentModule = true;
-      }
-    }
-
-    final completionPercentage =
-        totalMissions == 0 ? 0.0 : (completedMissions / totalMissions);
-    final currentLevel = (totalXp / 100).floor() + 1;
+    final currentModuleTitle = progress.isFullyCompleted
+        ? 'All modules completed'
+        : (progress.nextModule?.title ??
+            (progress.modules.isEmpty
+                ? 'No modules'
+                : progress.modules.first.title));
 
     return LearnerProfile(
-      currentLevel: currentLevel,
-      totalXp: totalXp,
-      completedMissionsCount: completedMissions,
+      currentLevel: progress.level,
+      totalXp: progress.totalXp,
+      completedMissionsCount: progress.completedMissionCount,
       achievementCount: unlockedAchievements.length,
-      overallCompletionPercentage: completionPercentage,
+      overallCompletionPercentage: progress.completionPercent,
       currentModuleTitle: currentModuleTitle,
       recentAchievements: unlockedAchievements.reversed.take(3).toList(),
     );

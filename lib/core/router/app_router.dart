@@ -19,8 +19,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/mission',
         name: 'mission',
         builder: (context, state) {
-          final mission = state.extra as Mission;
-          return MissionScreen(mission: mission);
+          final extra = state.extra;
+          if (extra is Mission) {
+            return MissionScreen(mission: extra);
+          }
+
+          // A direct/deep link without a typed Mission must never crash the
+          // app or open an arbitrary mission. Return to the canonical root.
+          return const HomeScreen();
         },
       ),
     ],

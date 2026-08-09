@@ -7,27 +7,29 @@ import 'core/theme/app_theme.dart';
 /// Application entry point.
 void main() {
   runApp(
-    // ProviderScope initializes Riverpod at the root of the application hierarchy.
-    const ProviderScope(child: PythonForgeApp()),
+    const ProviderScope(
+      child: PythonForgeApp(),
+    ),
   );
 }
 
-/// The root application widget.
-/// Configured with a pure Material 3 dark theme foundation and GoRouter.
+/// Root application widget.
+///
+/// The router has one explicit cold-start location: `/`, which renders the
+/// home screen. Mission screens are only reachable through an intentional
+/// navigation action or a valid typed route extra.
 class PythonForgeApp extends ConsumerWidget {
-  /// Standard const constructor.
   const PythonForgeApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the GoRouter configuration from Riverpod
-    final goRouter = ref.watch(appRouterProvider);
+    final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
       title: 'Python Forge',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      routerConfig: goRouter,
+      theme: AppTheme.forgeTheme,
+      routerConfig: router,
     );
   }
 }

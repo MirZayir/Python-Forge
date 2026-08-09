@@ -259,8 +259,8 @@ class _SettingsModalState extends State<SettingsModal> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.vibration_rounded,
                               color: AppColors.borderBlack, size: 22),
                           SizedBox(width: 12),
@@ -278,6 +278,7 @@ class _SettingsModalState extends State<SettingsModal> {
                         onTap: () async {
                           final newValue = !_hapticsEnabled;
                           await _settingsService.setHapticsEnabled(newValue);
+                          if (!mounted) return;
                           setState(() {
                             _hapticsEnabled = newValue;
                           });
@@ -337,8 +338,8 @@ class _SettingsModalState extends State<SettingsModal> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Icon(Icons.format_size_rounded,
                               color: AppColors.borderBlack, size: 22),
                           SizedBox(width: 12),
@@ -386,9 +387,9 @@ class _SettingsModalState extends State<SettingsModal> {
                         ),
                       ],
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(Icons.restart_alt_rounded,
                             color: AppColors.borderBlack, size: 22),
                         SizedBox(width: 8),

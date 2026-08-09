@@ -1,32 +1,59 @@
 import 'module.dart';
 
+/// Represents the top-level Python curriculum structure.
 class Curriculum {
+  final String id;
   final String version;
   final String title;
   final String description;
   final List<Module> modules;
 
   const Curriculum({
-    required this.version,
+    this.id = 'python_mastery',
+    this.version = '1.0.0',
     required this.title,
     required this.description,
     required this.modules,
   });
 
-  factory Curriculum.fromJson(Map<String, dynamic> json) {
-    final modulesJson = json['modules'] as List<dynamic>? ?? [];
-    final modulesList = modulesJson
-        .map((e) => Module.fromJson(e as Map<String, dynamic>))
-        .toList();
+  /// Parses both the current asset format (a top-level module list) and the
+  /// older envelope format ({"modules": [...]}) for safe migration.
+  factory Curriculum.fromJson(Object? source) {
+    String id = 'python_mastery';
+    String version = '1.0.0';
+    String title = 'Python Essentials';
+    String description = 'Master Python fundamentals from scratch.';
+    List<dynamic> moduleJson;
 
-    // Sort modules based on their designated order
-    modulesList.sort((a, b) => a.order.compareTo(b.order));
+    if (source is List<dynamic>) {
+      moduleJson = source;
+    } else if (source is Map<String, dynamic>) {
+      id = source['id'] as String? ?? id;
+      version = source['version'] as String? ?? version;
+      title = source['title'] as String? ?? title;
+      description = source['description'] as String? ?? description;
+      moduleJson = source['modules'] as List<dynamic>? ?? const [];
+    } else {
+      throw const FormatException(
+        'Curriculum must be a JSON list or an object containing modules.',
+      );
+    }
+
+    final modules = moduleJson.map((entry) {
+      if (entry is! Map<String, dynamic>) {
+        throw const FormatException(
+            'Every curriculum module must be an object.');
+      }
+      return Module.fromJson(entry);
+    }).toList()
+      ..sort((a, b) => a.order.compareTo(b.order));
 
     return Curriculum(
-      version: json['version'] as String? ?? '1.0.0',
-      title: json['title'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      modules: modulesList,
+      id: id,
+      version: version,
+      title: title,
+      description: description,
+      modules: modules,
     );
   }
 }

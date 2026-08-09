@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/progression/achievement.dart';
+import '../../../../core/progression/achievement_catalog.dart';
 import '../../../../core/progression/achievement_engine.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -28,41 +29,12 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   }
 
   Future<void> _loadAchievementsData() async {
-    final unlocked = await _achievementEngine.getUnlockedAchievements();
-    final unlockedSet = unlocked.map((a) => a.id).toSet();
-
-    final all = [
-      const Achievement(
-        id: 'first_code',
-        title: 'Spark Ignited',
-        description: 'Complete your very first mission in Python Forge.',
-      ),
-      const Achievement(
-        id: 'streak_3',
-        title: 'On Fire',
-        description: 'Maintain a 3-day active learning streak.',
-      ),
-      const Achievement(
-        id: 'module_1_done',
-        title: 'Foundations Master',
-        description: 'Complete all missions in Python Foundations.',
-      ),
-      const Achievement(
-        id: 'module_2_done',
-        title: 'Decision Maker',
-        description: 'Complete all missions in Control Flow & Decisions.',
-      ),
-      const Achievement(
-        id: 'xp_500',
-        title: 'XP Collector',
-        description: 'Accumulate 500 total Experience Points.',
-      ),
-    ];
+    final unlockedIds = await _achievementEngine.unlockedIds();
 
     if (mounted) {
       setState(() {
-        _allAchievements = all;
-        _unlockedIds = unlockedSet;
+        _allAchievements = AchievementCatalog.all;
+        _unlockedIds = unlockedIds;
         _isLoading = false;
       });
     }

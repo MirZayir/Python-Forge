@@ -1,29 +1,64 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/repositories/mission_repository.dart';
+import '../../../../core/progression/progress_manager.dart';
+import '../../../../core/progression/streak_engine.dart';
+import '../../data/repositories/curriculum_repository.dart';
+import '../../domain/models/curriculum.dart';
 import '../../domain/models/mission.dart';
+import '../../domain/models/module.dart';
 
-/// Provides the instance of [MissionRepository].
-final missionRepositoryProvider = Provider<MissionRepository>((ref) {
-  return LocalMissionRepository();
+/// Provider for CurriculumRepository instance
+final curriculumRepositoryProvider = Provider<CurriculumRepository>((ref) {
+  return CurriculumRepository();
 });
 
-/// A Notifier that safely bridges the async JSON loading with the synchronous UI.
-class MissionsNotifier extends Notifier<List<Mission>> {
-  @override
-  List<Mission> build() {
-    _loadMissions();
-    return []; // Return empty list immediately so HomeScreen doesn't need to change
-  }
+/// FutureProvider that fetches the full Curriculum asynchronously
+final curriculumProvider = FutureProvider<Curriculum>((ref) async {
+  final repository = ref.watch(curriculumRepositoryProvider);
+  return repository.getCurriculum();
+});
 
-  Future<void> _loadMissions() async {
-    final repository = ref.read(missionRepositoryProvider);
-    final missions = await repository.getMissions();
-    state = missions; // Triggers UI rebuild in HomeScreen once loaded
-  }
-}
+/// Provider for StreakEngine instance
+final streakEngineProvider = Provider<StreakEngine>((ref) {
+  return StreakEngine();
+});
 
-/// Provides the reactive list of available missions.
-final missionsProvider = NotifierProvider<MissionsNotifier, List<Mission>>(
-  MissionsNotifier.new,
-);
+/// Provider for ProgressManager instance
+final progressManagerProvider = Provider<ProgressManager>((ref) {
+  return ProgressManager();
+});
+
+/// Family provider to select a specific Module by ID
+final moduleByIdProvider = Provider.family<Module?, String>((ref, moduleId) {
+  final curriculumAsync = ref.watch(curriculumProvider);
+  return curriculumAsync.when(
+    data: (curriculum) {
+      try {
+        return curriculum.modules.firstWhere((m) => m.id == moduleId);
+      } catch (_) {
+        return null;
+      }
+    },
+    loading: () => null,
+    error: (_, __) => null,
+  );
+});
+
+/// Family provider to select a specific Mission by ID
+final missionByIdProvider = Provider.family<Mission?, String>((ref, missionId) {
+  final curriculumAsync = ref.watch(curriculumProvider);
+  return curriculumAsync.when(
+    data: (curriculum) {
+      for (final module in curriculum.modules) {
+        for (final mission in module.missions) {
+          if (mission.id == missionId) {
+            return mission;
+          }
+        }
+      }
+      return null;
+    },
+    loading: () => null,
+    error: (_, __) => null,
+  );
+});

@@ -1,27 +1,18 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import '../progression/progress_manager.dart';
 
+/// Compatibility facade over the canonical ProgressManager store.
 class ProgressService {
-  static const String _completedMissionsKey = 'completed_missions';
+  final ProgressManager _progressManager;
 
-  Future<List<String>> getCompletedMissions() async {
-    final prefs = await SharedPreferences.getInstance();
+  ProgressService({ProgressManager? progressManager})
+      : _progressManager = progressManager ?? ProgressManager();
 
-    return prefs.getStringList(_completedMissionsKey) ?? [];
-  }
+  Future<List<String>> getCompletedMissions() =>
+      _progressManager.getCompletedMissionIds();
 
-  Future<void> completeMission(String missionId) async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> completeMission(String missionId) =>
+      _progressManager.completeMission(missionId);
 
-    final completed = prefs.getStringList(_completedMissionsKey) ?? [];
-
-    if (!completed.contains(missionId)) {
-      completed.add(missionId);
-      await prefs.setStringList(_completedMissionsKey, completed);
-    }
-  }
-
-  Future<bool> isMissionCompleted(String missionId) async {
-    final completed = await getCompletedMissions();
-    return completed.contains(missionId);
-  }
+  Future<bool> isMissionCompleted(String missionId) =>
+      _progressManager.isMissionCompleted(missionId);
 }
