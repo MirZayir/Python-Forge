@@ -13,6 +13,7 @@ class ProgressManager {
     'progress_total_xp',
     'max_unlocked_mission',
     'unlocked_achievements',
+    'unlocked_achievement_times',
     'streak_current',
     'streak_longest',
     'streak_last_date',
@@ -44,6 +45,25 @@ class ProgressManager {
   Future<List<String>> getCompletedMissionIds() async {
     final ids = await completedMissionIds();
     return ids.toList(growable: false);
+  }
+
+  /// Removes IDs that are no longer present in the active curriculum.
+  ///
+  /// This protects derived XP/unlock calculations from stale content while
+  /// preserving valid completion history across curriculum migrations.
+  Future<Set<String>> sanitizeCompletedMissionIds(
+    Set<String> validMissionIds,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await _readCompletedIds(prefs);
+    final sanitized = current.intersection(validMissionIds);
+    if (sanitized.length != current.length) {
+      await prefs.setStringList(
+        completedMissionsKey,
+        sanitized.toList(growable: false),
+      );
+    }
+    return sanitized;
   }
 
   Future<int> completedMissionCount() async {

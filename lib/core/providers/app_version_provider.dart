@@ -4,5 +4,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Implemented using a standard Provider to ensure immediate compilation
 /// without requiring build_runner or code generation.
 final appVersionProvider = Provider<String>((ref) {
-  return '0.1.0-dev';
+  return '1.0.0';
 });

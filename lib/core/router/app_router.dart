@@ -21,7 +21,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           if (extra is Mission) {
-            return MissionScreen(mission: extra);
+            return MissionEntryScreen(mission: extra);
           }
 
           // A direct/deep link without a typed Mission must never crash the

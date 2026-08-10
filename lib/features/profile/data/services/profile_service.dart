@@ -32,7 +32,8 @@ class ProfileService {
       achievementCount: unlockedAchievements.length,
       overallCompletionPercentage: progress.completionPercent,
       currentModuleTitle: currentModuleTitle,
-      recentAchievements: unlockedAchievements.reversed.take(3).toList(),
+      // AchievementEngine returns newest first using persisted unlock times.
+      recentAchievements: unlockedAchievements.take(3).toList(),
     );
   }
 }

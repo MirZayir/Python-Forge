@@ -20,7 +20,7 @@ abstract class PythonRunner {
 class SeriousPythonRunner implements PythonRunner {
   static const String assetPath = 'app/app.zip';
   static const Duration _readinessTimeout = Duration(seconds: 25);
-  static const Duration _requestTimeout = Duration(seconds: 20);
+  static const Duration _requestTimeout = Duration(seconds: 8);
   static final Uri _serverUri = Uri.parse('http://127.0.0.1:8765/');
 
   static final HttpClient _client = HttpClient()
@@ -47,12 +47,23 @@ class SeriousPythonRunner implements PythonRunner {
         );
       }
 
-      final hasError = data['has_error'] == true;
+      final hasErrorValue = data['has_error'];
+      if (hasErrorValue is! bool) {
+        throw const FormatException(
+          'The Python service returned an invalid error flag.',
+        );
+      }
+      final rawErrorType = data['error_type'];
+      final errorType = rawErrorType is String && rawErrorType.trim().isNotEmpty
+          ? rawErrorType
+          : null;
       return ExecutionResult(
         output: output,
-        success: !hasError,
+        success: !hasErrorValue,
         executionTimeMs: stopwatch.elapsedMilliseconds,
-        hasError: hasError,
+        hasError: hasErrorValue,
+        errorType: errorType,
+        truncated: data['truncated'] == true,
       );
     } on TimeoutException {
       return ExecutionResult(
@@ -61,6 +72,7 @@ class SeriousPythonRunner implements PythonRunner {
         success: false,
         executionTimeMs: stopwatch.elapsedMilliseconds,
         hasError: true,
+        errorType: 'TimeoutError',
       );
     } catch (error) {
       return ExecutionResult(
@@ -84,11 +96,23 @@ class SeriousPythonRunner implements PythonRunner {
 
   static Future<void> _ensureReady() {
     if (_isReady) return Future<void>.value();
-    return _readiness ??= _waitForReady()
-      ..then<void>((_) {}, onError: (_, __) {
-        // Allow a later attempt to retry readiness polling.
-        _readiness = null;
-      });
+
+    final existing = _readiness;
+    if (existing != null) return existing;
+
+    final future = _waitForReady();
+    _readiness = future;
+    future.then<void>(
+      (_) {
+        if (identical(_readiness, future)) _readiness = null;
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        // Allow a later attempt to retry readiness polling after startup or
+        // health-check failure without retaining a failed future forever.
+        if (identical(_readiness, future)) _readiness = null;
+      },
+    );
+    return future;
   }
 
   static Future<void> _waitForReady() async {
@@ -130,17 +154,22 @@ class SeriousPythonRunner implements PythonRunner {
   /// Starts the interpreter exactly once for the process lifetime.
   static void _launch() {
     if (_launched) return;
+    _startupError = null;
+    _programExitMessage = null;
     _launched = true;
 
     SeriousPython.run(assetPath).then((message) {
       // Completing means the Python program stopped serving. Serious Python
-      // returns Python errors as a string instead of throwing, so record it.
+      // returns Python errors as a string instead of throwing, so record it
+      // and permit a later execution attempt to retry startup.
       _programExitMessage = (message == null || message.trim().isEmpty)
           ? 'The Python program exited without starting the execution service.'
           : message;
       _isReady = false;
+      _launched = false;
     }).catchError((Object error) {
       _startupError = error;
+      _launched = false;
     });
   }
 

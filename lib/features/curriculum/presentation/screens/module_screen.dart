@@ -24,6 +24,7 @@ class _ModuleScreenState extends State<ModuleScreen> {
 
   LearningProgress? _progress;
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -37,11 +38,15 @@ class _ModuleScreenState extends State<ModuleScreen> {
       if (!mounted) return;
       setState(() {
         _progress = progress;
+        _errorMessage = null;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
     }
   }
 
@@ -64,7 +69,8 @@ class _ModuleScreenState extends State<ModuleScreen> {
 
     HapticService.lightImpact();
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => MissionScreen(mission: mission)),
+      MaterialPageRoute(
+          builder: (context) => MissionEntryScreen(mission: mission)),
     );
     await _loadProgress();
   }
@@ -131,27 +137,69 @@ class _ModuleScreenState extends State<ModuleScreen> {
                     AlwaysStoppedAnimation<Color>(AppColors.borderBlack),
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(AppSpacing.large),
-              physics: const BouncingScrollPhysics(),
-              itemCount: widget.module.missions.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildModuleSummary(completedCount);
-                }
-                final mission = widget.module.missions[index - 1];
-                final isCompleted =
-                    progress?.isMissionCompleted(mission.id) ?? false;
-                final isUnlocked =
-                    progress?.isMissionUnlocked(mission.id) ?? index == 1;
-                return _buildMissionCard(
-                  mission: mission,
-                  missionNumber: index,
-                  isCompleted: isCompleted,
-                  isUnlocked: isUnlocked,
-                );
-              },
+          : _errorMessage != null
+              ? _buildErrorBody()
+              : ListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.large),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: widget.module.missions.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return _buildModuleSummary(completedCount);
+                    }
+                    final mission = widget.module.missions[index - 1];
+                    final isCompleted =
+                        progress?.isMissionCompleted(mission.id) ?? false;
+                    final isUnlocked =
+                        progress?.isMissionUnlocked(mission.id) ?? false;
+                    return _buildMissionCard(
+                      mission: mission,
+                      missionNumber: index,
+                      isCompleted: isCompleted,
+                      isUnlocked: isUnlocked,
+                    );
+                  },
+                ),
+    );
+  }
+
+  Widget _buildErrorBody() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.large),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                color: AppColors.slagRed, size: 42),
+            const SizedBox(height: AppSpacing.medium),
+            const Text(
+              'Unable to load module progress',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.borderBlack,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
             ),
+            const SizedBox(height: AppSpacing.small),
+            Text(
+              _errorMessage ?? 'Unknown progress error.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.borderBlack,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.medium),
+            ElevatedButton(
+              onPressed: _loadProgress,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

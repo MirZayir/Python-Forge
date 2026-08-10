@@ -20,7 +20,7 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
   final SettingsService _settingsService = SettingsService();
 
   String _outputText =
-      '>>> Python REPL Ready\n>>> Enter code above and tap Exec.';
+      'Python Console Ready\nEnter code above and tap Execute.';
   bool _isRunning = false;
   double _editorFontSize = 14.0;
 
@@ -48,24 +48,40 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
     super.dispose();
   }
 
+  void _goBack() {
+    Navigator.of(context).pop();
+  }
+
   Future<void> _runCode() async {
     if (_isRunning) return;
 
     setState(() {
       _isRunning = true;
-      _outputText = '>>> Executing...';
+      _outputText = 'Executing...';
     });
 
-    final result = await _interpreter.run(_codeController.text);
+    try {
+      final result = await _interpreter.run(_codeController.text);
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    setState(() {
-      _isRunning = false;
-      _outputText = result.output.isNotEmpty
+      final output = result.output.isNotEmpty
           ? result.output
-          : '>>> Executed successfully with no stdout.';
-    });
+          : 'Executed successfully with no stdout.';
+      final metadata = <String>[
+        if (result.errorType != null) 'Error type: ${result.errorType}',
+        if (result.truncated) 'Output was truncated to protect the app.',
+      ];
+      setState(() {
+        _isRunning = false;
+        _outputText = [output, ...metadata].join('\n\n');
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isRunning = false;
+        _outputText = 'Python engine failure: $error';
+      });
+    }
   }
 
   @override
@@ -75,26 +91,33 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
         backgroundColor: AppColors.bgCream,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.cardWhite,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.borderBlack, width: 2.5),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.shadowBlack,
-                  offset: Offset(2, 2),
-                  blurRadius: 0,
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.borderBlack,
-              size: 20,
+        leading: Semantics(
+          button: true,
+          label: 'Back',
+          hint: 'Double tap to return home',
+          excludeSemantics: true,
+          onTap: _goBack,
+          child: GestureDetector(
+            onTap: _goBack,
+            child: Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.borderBlack, width: 2.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.shadowBlack,
+                    offset: Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.borderBlack,
+                size: 20,
+              ),
             ),
           ),
         ),
@@ -145,7 +168,7 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
                             color: AppColors.borderBlack, size: 18),
                         SizedBox(width: 8),
                         Text(
-                          'PYTHON REPL EDITOR',
+                          'PYTHON CONSOLE EDITOR',
                           style: TextStyle(
                             color: AppColors.borderBlack,
                             fontSize: 12.0,
@@ -176,43 +199,58 @@ class _QuickConsoleScreenState extends State<QuickConsoleScreen> {
             const SizedBox(height: 16),
 
             // Run Button
-            GestureDetector(
-              onTap: _isRunning ? null : _runCode,
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.neuGreen,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderBlack, width: 2.5),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.shadowBlack,
-                      offset: Offset(3, 3),
-                      blurRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _isRunning
-                            ? Icons.hourglass_top_rounded
-                            : Icons.play_arrow_rounded,
-                        color: AppColors.borderBlack,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isRunning ? 'Running...' : 'Execute Script',
-                        style: const TextStyle(
-                          color: AppColors.borderBlack,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w900,
-                        ),
+            Semantics(
+              button: true,
+              enabled: !_isRunning,
+              label: _isRunning ? 'Running script' : 'Execute script',
+              hint: _isRunning
+                  ? 'Please wait for execution to finish'
+                  : 'Double tap to run the Python code',
+              excludeSemantics: true,
+              onTap: _isRunning
+                  ? null
+                  : () {
+                      _runCode();
+                    },
+              child: GestureDetector(
+                onTap: _isRunning ? null : _runCode,
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: AppColors.neuGreen,
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: AppColors.borderBlack, width: 2.5),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.shadowBlack,
+                        offset: Offset(3, 3),
+                        blurRadius: 0,
                       ),
                     ],
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isRunning
+                              ? Icons.hourglass_top_rounded
+                              : Icons.play_arrow_rounded,
+                          color: AppColors.borderBlack,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isRunning ? 'Running...' : 'Execute Script',
+                          style: const TextStyle(
+                            color: AppColors.borderBlack,
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -16,6 +16,129 @@ import '../../../../core/widgets/code_editor_widget.dart';
 import '../../../../core/widgets/forge_scaffold.dart';
 import '../../domain/models/mission.dart';
 
+/// Resolves a mission through the active curriculum before allowing execution.
+///
+/// Production navigation uses this wrapper instead of trusting a Mission object
+/// supplied through a route extra or an imperative caller. Completed missions
+/// remain revisit-able, while unknown and locked missions never open an editor.
+class MissionEntryScreen extends StatefulWidget {
+  final Mission mission;
+
+  const MissionEntryScreen({super.key, required this.mission});
+
+  @override
+  State<MissionEntryScreen> createState() => _MissionEntryScreenState();
+}
+
+class _MissionEntryScreenState extends State<MissionEntryScreen> {
+  final LearningProgressService _progressService = LearningProgressService();
+  late final Future<Mission?> _missionFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _missionFuture = _resolveMission();
+  }
+
+  Future<Mission?> _resolveMission() async {
+    final progress = await _progressService.load();
+    Mission? canonicalMission;
+    for (final module in progress.curriculum.modules) {
+      for (final mission in module.missions) {
+        if (mission.id == widget.mission.id) {
+          canonicalMission = mission;
+          break;
+        }
+      }
+      if (canonicalMission != null) break;
+    }
+
+    if (canonicalMission == null) return null;
+    final isKnownAndAccessible =
+        progress.isMissionUnlocked(canonicalMission.id) ||
+            progress.isMissionCompleted(canonicalMission.id);
+    return isKnownAndAccessible ? canonicalMission : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Mission?>(
+      future: _missionFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const ForgeScaffold(
+            body: Center(
+              child: CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.borderBlack),
+              ),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return _buildMessage(
+            title: 'Mission unavailable',
+            message:
+                'The curriculum could not be verified. Please return and retry.',
+          );
+        }
+        final mission = snapshot.data;
+        if (mission == null) {
+          return _buildMessage(
+            title: 'Mission locked',
+            message:
+                'Complete the previous mission before opening this challenge.',
+          );
+        }
+        return MissionScreen(mission: mission);
+      },
+    );
+  }
+
+  Widget _buildMessage({required String title, required String message}) {
+    return ForgeScaffold(
+      appBar: AppBar(title: const Text('Mission')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.large),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline_rounded,
+                  color: AppColors.borderBlack, size: 44),
+              const SizedBox(height: AppSpacing.medium),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.borderBlack,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.small),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.borderBlack,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.large),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Back'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Neubrutalist mission screen supporting Code, MCQ, and Fill-in-the-Blank challenges.
 class MissionScreen extends StatefulWidget {
   final Mission mission;
@@ -326,7 +449,7 @@ class _MissionScreenState extends State<MissionScreen> {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
                           builder: (context) =>
-                              MissionScreen(mission: nextMission),
+                              MissionEntryScreen(mission: nextMission),
                         ),
                       );
                     },
@@ -530,89 +653,99 @@ class _MissionScreenState extends State<MissionScreen> {
                     Row(
                       children: [
                         if (widget.mission.hints.isNotEmpty) ...[
-                          GestureDetector(
-                            onTap: _showHint,
-                            child: Container(
-                              height: 52,
-                              width: 52,
-                              decoration: BoxDecoration(
-                                color: AppColors.cardWhite,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                    color: AppColors.borderBlack, width: 2.5),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: AppColors.shadowBlack,
-                                    offset: Offset(3, 3),
-                                    blurRadius: 0,
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.lightbulb_outline_rounded,
-                                color: AppColors.borderBlack,
-                                size: 24,
+                          Semantics(
+                            button: true,
+                            label: 'Show mission hint',
+                            child: GestureDetector(
+                              onTap: _showHint,
+                              child: Container(
+                                height: 52,
+                                width: 52,
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardWhite,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                      color: AppColors.borderBlack, width: 2.5),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: AppColors.shadowBlack,
+                                      offset: Offset(3, 3),
+                                      blurRadius: 0,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.lightbulb_outline_rounded,
+                                  color: AppColors.borderBlack,
+                                  size: 24,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.medium),
                         ],
                         Expanded(
-                          child: GestureDetector(
-                            onTap: _isRunning ? null : _submitAnswer,
-                            child: Container(
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: _isRunning
-                                    ? Colors.grey
-                                    : AppColors.neuGreen,
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                    color: AppColors.borderBlack, width: 2.5),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: AppColors.shadowBlack,
-                                    offset: Offset(3, 3),
-                                    blurRadius: 0,
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: _isRunning
-                                    ? const SizedBox(
-                                        height: 22,
-                                        width: 22,
-                                        child: CircularProgressIndicator(
-                                          color: AppColors.borderBlack,
-                                          strokeWidth: 2.5,
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            widget.mission.type ==
-                                                    MissionType.code
-                                                ? Icons.play_arrow_rounded
-                                                : Icons.check_rounded,
+                          child: Semantics(
+                            button: true,
+                            enabled: !_isRunning,
+                            label:
+                                _isRunning ? 'Running code' : 'Submit answer',
+                            child: GestureDetector(
+                              onTap: _isRunning ? null : _submitAnswer,
+                              child: Container(
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: _isRunning
+                                      ? Colors.grey
+                                      : AppColors.neuGreen,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                      color: AppColors.borderBlack, width: 2.5),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: AppColors.shadowBlack,
+                                      offset: Offset(3, 3),
+                                      blurRadius: 0,
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: _isRunning
+                                      ? const SizedBox(
+                                          height: 22,
+                                          width: 22,
+                                          child: CircularProgressIndicator(
                                             color: AppColors.borderBlack,
-                                            size: 24,
+                                            strokeWidth: 2.5,
                                           ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            widget.mission.type ==
-                                                    MissionType.code
-                                                ? 'Run Code'
-                                                : 'Submit Answer',
-                                            style: const TextStyle(
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              widget.mission.type ==
+                                                      MissionType.code
+                                                  ? Icons.play_arrow_rounded
+                                                  : Icons.check_rounded,
                                               color: AppColors.borderBlack,
-                                              fontSize: 16.0,
-                                              fontWeight: FontWeight.w900,
+                                              size: 24,
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              widget.mission.type ==
+                                                      MissionType.code
+                                                  ? 'Run Code'
+                                                  : 'Submit Answer',
+                                              style: const TextStyle(
+                                                color: AppColors.borderBlack,
+                                                fontSize: 16.0,
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                ),
                               ),
                             ),
                           ),
@@ -795,51 +928,60 @@ class _MissionScreenState extends State<MissionScreen> {
           final isSelected = _selectedMcqOption == option;
           return Padding(
             padding: const EdgeInsets.only(bottom: 12.0),
-            child: GestureDetector(
-              onTap: () {
-                HapticService.selectionClick();
-                setState(() {
-                  _selectedMcqOption = option;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.neuYellow : AppColors.cardWhite,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderBlack, width: 2.5),
-                  boxShadow: isSelected
-                      ? const [
-                          BoxShadow(
-                            color: AppColors.shadowBlack,
-                            offset: Offset(3, 3),
-                            blurRadius: 0,
-                          )
-                        ]
-                      : [],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSelected
-                          ? Icons.radio_button_checked_rounded
-                          : Icons.radio_button_off_rounded,
-                      color: AppColors.borderBlack,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        option,
-                        style: const TextStyle(
-                          color: AppColors.borderBlack,
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: 'monospace',
+            child: Semantics(
+              button: true,
+              selected: isSelected,
+              label: 'Answer option $option',
+              hint: isSelected ? 'Selected' : 'Double tap to select',
+              child: InkWell(
+                onTap: () {
+                  HapticService.selectionClick();
+                  setState(() {
+                    _selectedMcqOption = option;
+                  });
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color:
+                        isSelected ? AppColors.neuYellow : AppColors.cardWhite,
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: AppColors.borderBlack, width: 2.5),
+                    boxShadow: isSelected
+                        ? const [
+                            BoxShadow(
+                              color: AppColors.shadowBlack,
+                              offset: Offset(3, 3),
+                              blurRadius: 0,
+                            )
+                          ]
+                        : [],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: AppColors.borderBlack,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          option,
+                          style: const TextStyle(
+                            color: AppColors.borderBlack,
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'monospace',
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -914,6 +1056,7 @@ class _MissionScreenState extends State<MissionScreen> {
               fontWeight: FontWeight.w900,
             ),
             decoration: InputDecoration(
+              labelText: 'Answer',
               hintText: 'Type missing keyword or value...',
               hintStyle: TextStyle(
                 color: Colors.grey.shade600,

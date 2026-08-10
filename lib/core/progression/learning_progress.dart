@@ -87,13 +87,20 @@ class LearningProgress {
     );
   }
 
-  /// Mission that immediately follows [missionId] in curriculum order.
+  /// Returns the next valid, incomplete mission after [missionId].
+  ///
+  /// A plain list successor is not safe when a curriculum introduces explicit
+  /// prerequisites, so the derived unlock set is respected here as well.
   Mission? missionAfter(String missionId) {
     final ordered = curriculum.modules
         .expand((module) => module.missions)
         .toList(growable: false);
-    for (var index = 0; index < ordered.length - 1; index++) {
-      if (ordered[index].id == missionId) return ordered[index + 1];
+    var found = false;
+    for (final mission in ordered) {
+      if (found && unlockedMissionIds.contains(mission.id)) {
+        return mission;
+      }
+      if (mission.id == missionId) found = true;
     }
     return null;
   }
@@ -121,7 +128,13 @@ class LearningProgressService {
 
   Future<LearningProgress> load() async {
     final curriculum = await _curriculumRepository.getCurriculum();
-    final completed = await _progressManager.completedMissionIds();
+    final validMissionIds = curriculum.modules
+        .expand((module) => module.missions)
+        .map((mission) => mission.id)
+        .toSet();
+    final completed = await _progressManager.sanitizeCompletedMissionIds(
+      validMissionIds,
+    );
     return build(curriculum: curriculum, completedMissionIds: completed);
   }
 
@@ -133,34 +146,33 @@ class LearningProgressService {
     final ordered = curriculum.modules
         .expand((module) => module.missions)
         .toList(growable: false);
+    final knownMissionIds = ordered.map((mission) => mission.id).toSet();
+    final completed = completedMissionIds.intersection(knownMissionIds);
 
     final unlocked = <String>{};
     for (var index = 0; index < ordered.length; index++) {
       final mission = ordered[index];
-      final isFirst = index == 0;
-      final previousCompleted =
-          !isFirst && completedMissionIds.contains(ordered[index - 1].id);
-      final declaredPrerequisitesMet = mission.prerequisites.isNotEmpty &&
-          mission.prerequisites.every(completedMissionIds.contains);
+      final previousGate =
+          index == 0 || completed.contains(ordered[index - 1].id);
+      final prerequisiteGate = mission.prerequisites.isEmpty ||
+          mission.prerequisites.every(completed.contains);
 
-      if (isFirst ||
-          previousCompleted ||
-          declaredPrerequisitesMet ||
-          completedMissionIds.contains(mission.id)) {
+      if (completed.contains(mission.id) ||
+          (previousGate && prerequisiteGate)) {
         unlocked.add(mission.id);
       }
     }
 
     var totalXp = 0;
     for (final mission in ordered) {
-      if (completedMissionIds.contains(mission.id)) {
+      if (completed.contains(mission.id)) {
         totalXp += XpManager.rewardFor(mission);
       }
     }
 
     final moduleProgress = curriculum.modules.map((module) {
       final completedInModule = module.missions
-          .where((mission) => completedMissionIds.contains(mission.id))
+          .where((mission) => completed.contains(mission.id))
           .length;
       final moduleUnlocked =
           module.missions.any((mission) => unlocked.contains(mission.id));
@@ -173,8 +185,7 @@ class LearningProgressService {
 
     Mission? nextMission;
     for (final mission in ordered) {
-      if (!completedMissionIds.contains(mission.id) &&
-          unlocked.contains(mission.id)) {
+      if (!completed.contains(mission.id) && unlocked.contains(mission.id)) {
         nextMission = mission;
         break;
       }
@@ -192,7 +203,7 @@ class LearningProgressService {
 
     return LearningProgress(
       curriculum: curriculum,
-      completedMissionIds: completedMissionIds,
+      completedMissionIds: completed,
       unlockedMissionIds: unlocked,
       moduleProgress: moduleProgress,
       totalXp: totalXp,

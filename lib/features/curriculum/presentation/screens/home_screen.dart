@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/progression/achievement_catalog.dart';
+import '../../../../core/progression/achievement_engine.dart';
 import '../../../../core/progression/learning_progress.dart';
 import '../../../../core/progression/streak_engine.dart';
 import '../../../../core/services/haptic_service.dart';
@@ -26,6 +28,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final LearningProgressService _progressService = LearningProgressService();
   final StreakEngine _streakEngine = StreakEngine();
+  final AchievementEngine _achievementEngine = AchievementEngine();
   final SettingsService _settingsService = SettingsService();
 
   LearningProgress? _progress;
@@ -44,8 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _settingsService.isHapticsEnabled();
-    _settingsService.getEditorFontSize();
     _loadDashboard();
   }
 
@@ -55,8 +56,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     try {
+      // Resolve preferences before exposing interactive dashboard controls so
+      // the first haptic/editor action cannot use stale defaults.
+      await _settingsService.isHapticsEnabled();
+      await _settingsService.getEditorFontSize();
       final progress = await _progressService.load();
       final streak = await _streakEngine.getStreakData();
+
+      // Reconcile persisted progress-derived badges on every cold start. This
+      // repairs installs interrupted between mission completion and badge save.
+      try {
+        await _achievementEngine.evaluateAndUnlock(
+          AchievementMetrics(
+            completedMissionCount: progress.completedMissionCount,
+            totalXp: progress.totalXp,
+            currentStreak: streak.currentStreak,
+          ),
+        );
+      } catch (_) {
+        // Badge persistence must not make the learning dashboard unavailable.
+      }
+
       if (!mounted) return;
       setState(() {
         _progress = progress;
@@ -95,7 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => MissionScreen(mission: mission)),
+      MaterialPageRoute(
+          builder: (context) => MissionEntryScreen(mission: mission)),
     );
     await _loadDashboard();
   }
@@ -323,16 +344,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final streakCount = _streakData?.currentStreak ?? 0;
+    final isCompactAppBar = MediaQuery.sizeOf(context).width < 420;
 
     return ForgeScaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.medium,
-        title: const Text(
-          'PYTHON FORGE',
+        title: Text(
+          isCompactAppBar ? 'FORGE' : 'PYTHON FORGE',
           maxLines: 1,
-          overflow: TextOverflow.visible,
+          overflow: TextOverflow.ellipsis,
           softWrap: false,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.borderBlack,
             fontWeight: FontWeight.w900,
             fontSize: 16,
@@ -757,8 +779,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            runSpacing: 4,
             children: [
               const Text(
                 'OVERALL PROGRESS',

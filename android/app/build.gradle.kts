@@ -28,13 +28,41 @@ android {
             // Without legacy packaging AGP keeps .so files compressed inside
             // the APK, they are never extracted, and Python cannot start.
             useLegacyPackaging = true
-            keepDebugSymbols += "**/*.so"
+        }
+    }
+
+    val releaseStoreFile = providers.gradleProperty("PYTHON_FORGE_UPLOAD_STORE_FILE").orNull
+    val releaseStorePassword = providers.gradleProperty("PYTHON_FORGE_UPLOAD_STORE_PASSWORD").orNull
+    val releaseKeyAlias = providers.gradleProperty("PYTHON_FORGE_UPLOAD_KEY_ALIAS").orNull
+    val releaseKeyPassword = providers.gradleProperty("PYTHON_FORGE_UPLOAD_KEY_PASSWORD").orNull
+    val hasReleaseSigning = listOf(
+        releaseStoreFile,
+        releaseStorePassword,
+        releaseKeyAlias,
+        releaseKeyPassword,
+    ).all { !it.isNullOrBlank() }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // Never ship a release artifact signed with Flutter/Android's
+            // debug key. Configure the four PYTHON_FORGE_UPLOAD_* properties
+            // in a private gradle.properties or CI secret store for release.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = null
+            }
         }
     }
 }

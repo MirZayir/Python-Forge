@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for the embedded Serious Python loopback HTTP service. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Python Forge"
         android:name="${applicationName}"
