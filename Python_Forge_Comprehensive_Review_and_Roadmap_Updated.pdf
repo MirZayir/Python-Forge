@@ -1,0 +1,390 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R 21 0 R] /Count 8 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Length 4708 >>
+stream
+BT /F2 25.00 Tf 0.040 0.040 0.040 rg 48.00 783.89 Td (PYTHON FORGE) Tj ET
+BT /F1 12.00 Tf 0.200 0.200 0.200 rg 48.00 751.89 Td (Updated Comprehensive Review and Roadmap - Revision 1.1) Tj ET
+BT /F2 9.50 Tf 0.120 0.300 0.450 rg 48.00 725.89 Td (Generated: 10 August 2026 | Scope: current workspace evidence and the next development backlog) Tj ET
+BT /F1 10.20 Tf 0.080 0.080 0.080 rg 48.00 707.78 Td (This document updates Python_Forge_Comprehensive_Review_and_Roadmap.pdf. It marks work that is) Tj ET
+BT /F1 10.20 Tf 0.080 0.080 0.080 rg 48.00 693.70 Td (implemented and validated, separates partial or blocked work from future work, and records the) Tj ET
+BT /F1 10.20 Tf 0.080 0.080 0.080 rg 48.00 679.63 Td (development phases recommended from this point forward.) Tj ET
+0.910 0.940 0.980 rg 48.00 573.55 499.28 83.00 re f
+BT /F2 9.50 Tf 0.050 0.050 0.050 rg 58.00 657.55 Td (SOURCE LIMITATION) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 644.55 Td (The original PDF is preserved unchanged at the repository root. Its readable metadata identifies the) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 631.99 Td (title Python Forge - Comprehensive Review & Bounded Roadmap and a 9 August 2026 creation date, but its) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 619.44 Td (body is stored in compressed streams that were not reliably extractable. This revision therefore uses) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 606.88 Td (repository source, tests, build output, and device evidence rather than claiming a line-by-line) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 594.32 Td (reproduction of unreadable original sections.) Tj ET
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 559.55 Td (1. Executive status) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 542.55 m 547.28 542.55 l S
+BT /F1 10.00 Tf 0.080 0.080 0.080 rg 48.00 533.55 Td (The main application-quality recommendations have been implemented and validated locally. The) Tj ET
+BT /F1 10.00 Tf 0.080 0.080 0.080 rg 48.00 519.75 Td (project is not yet production-ready for hostile arbitrary-code execution or public release) Tj ET
+BT /F1 10.00 Tf 0.080 0.080 0.080 rg 48.00 505.95 Td (because the runtime is still in-process and the release artifact is unsigned.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 485.15 Td ([IMPLEMENTED] Core product hardening) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 471.65 Td (Runtime request limits, best-effort execution deadlines, deterministic archive packaging, curriculum) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 459.37 Td (contracts, guarded navigation, progression reconciliation, achievement persistence, semantic controls,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 447.09 Td (and responsive layout protections are present in the workspace.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 428.81 Td ([PARTIAL] Release and evidence gates) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 415.31 Td (The release AAB build and native-symbol check pass locally, and a CI workflow exists, but hosted CI) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 403.02 Td (provenance, integration/device artifacts, signing verification, and full roadmap traceability remain) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 390.74 Td (incomplete.) Tj ET
+BT /F2 10.00 Tf 0.680 0.100 0.100 rg 48.00 372.46 Td ([BLOCKED] Production sandbox and signing) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 358.96 Td (A separate killable execution worker or external sandbox has not been implemented. Production signing) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 346.68 Td (secrets and a keystore are not available, so the locally generated release AAB is unsigned.) Tj ET
+BT /F2 11.50 Tf 0.080 0.300 0.480 rg 48.00 323.40 Td (Status legend) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 311.40 m 547.28 311.40 l S
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 48.00 302.40 Td ([IMPLEMENTED] Completed in source and supported by validation evidence. [PARTIAL] Some implementation) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 48.00 289.70 Td (exists, but an acceptance gate or evidence is still missing. [PLANNED] New work proposed in this) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 48.00 277.00 Td (revision. [BLOCKED] Cannot be completed with the current architecture or unavailable credentials.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 48.00 264.31 Td ([EVIDENCE GAP] Work may exist, but provenance or verification is not recorded.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 1) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 6394 >>
+stream
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 773.89 Td (2. Implemented changes to date) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 756.89 m 547.28 756.89 l S
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 747.89 Td (The following items are marked implemented because they are visible in the current codebase and were) Tj ET
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 734.78 Td (covered by the latest local validation pass.) Tj ET
+BT /F2 11.50 Tf 0.080 0.300 0.480 rg 48.00 709.67 Td (2.1 Runtime and execution constraints) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 697.67 m 547.28 697.67 l S
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 686.67 Td ([IMPLEMENTED] Bounded embedded execution) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 673.17 Td (python_src/main.py applies a 5-second best-effort deadline using tracing on all platforms and signals) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 660.89 Td (where available. It caps requests at 128 KiB, caps output at 20,000 characters, serializes HTTP) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 648.61 Td (execution, structures errors, blocks common unsafe imports/builtins, and keeps SystemExit from) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 636.32 Td (terminating the service.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 618.04 Td ([IMPLEMENTED] Dart bridge timeout and recovery) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 604.54 Td (lib/core/engine/python_runner.dart performs readiness polling, sends bounded JSON requests, and applies) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 592.26 Td (an 8-second request guard. Android validation covered successful output, syntax errors, runtime errors,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 579.98 Td (an infinite loop timeout, and a successful execution after timeout recovery.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 561.70 Td ([PARTIAL] Security isolation) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 548.20 Td (The current implementation explicitly remains a constrained execution environment, not a security) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 535.91 Td (sandbox. A learner program can still run inside the host process and the deadline is best-effort for) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 523.63 Td (native or C-level blocking work.) Tj ET
+BT /F2 11.50 Tf 0.080 0.300 0.480 rg 48.00 500.35 Td (2.2 Runtime archive and build packaging) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 488.35 m 547.28 488.35 l S
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 477.35 Td ([IMPLEMENTED] Reproducible runtime archive) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 463.85 Td (tooling/package_python_runtime.py verifies that app/app.zip contains the expected main.py payload and) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 451.57 Td (matches python_src/main.py byte-for-byte. The latest verified archive SHA-256 is) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 439.29 Td (ab973bb99f857362ae0875d3a8e489d19e0a7999059ff47756df6bcabfe208bf.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 421.00 Td ([IMPLEMENTED] Native-symbol release packaging) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 407.50 Td (Removing the contradictory keepDebugSymbols setting allows Flutter's AAB check to find libflutter.so.sym) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 395.22 Td (and libapp.so.sym in BUNDLE-METADATA while retaining useLegacyPackaging for the embedded Python payload.) Tj ET
+BT /F2 11.50 Tf 0.080 0.300 0.480 rg 48.00 371.94 Td (2.3 Curriculum, progression, and navigation) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 359.94 m 547.28 359.94 l S
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 348.94 Td ([IMPLEMENTED] Curriculum contracts) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 335.44 Td (CurriculumRepository validates stable curriculum metadata, unique positive module order, required module) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 323.16 Td (and mission fields, exact-match validation, answer contracts, MCQ options, and prerequisite references) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 310.88 Td (before caching the asset.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 292.59 Td ([IMPLEMENTED] Progress reconciliation) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 279.09 Td (LearningProgressService and ProgressManager sanitize stale completion IDs, migrate safe legacy keys,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 266.81 Td (derive unlocks, XP, level, completion percentage, resume position, and module progress from one active) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 254.53 Td (curriculum.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 236.25 Td ([IMPLEMENTED] Achievements and safe mission entry) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 222.75 Td (Achievement definitions are catalog-backed and reconciled on dashboard load. MissionEntryScreen resolves) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 210.47 Td (route data against the active curriculum and permits only known unlocked or completed missions; invalid) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 198.18 Td (and locked entries never open an editor.) Tj ET
+BT /F2 11.50 Tf 0.080 0.300 0.480 rg 48.00 174.90 Td (2.4 Accessibility and responsive interface) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 162.90 m 547.28 162.90 l S
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 151.90 Td ([IMPLEMENTED] Semantic controls) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 138.40 Td (Custom settings, reset, Quick Console, streak, profile, and execution controls expose labels, hints, and) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 126.12 Td (button semantics instead of relying only on visual GestureDetector or InkWell presentation.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 107.84 Td ([IMPLEMENTED] Narrow screens and large text) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 94.34 Td (The dashboard uses compact FORGE branding below 420 px, ellipsis for the app-bar title, a wrapping) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 82.06 Td (overall-progress header, and widget coverage for a 360x800 surface and 2.0 text scaling.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 2) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 994 >>
+stream
+BT /F2 11.50 Tf 0.080 0.300 0.480 rg 48.00 783.89 Td (2.5 Local quality gates) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 771.89 m 547.28 771.89 l S
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 760.89 Td ([IMPLEMENTED] Automated test coverage) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 747.39 Td (The current suite covers answer validation, curriculum contracts, progress/unlock derivation, route) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 735.11 Td (protection, mission rendering, settings, streaks, achievements, cold start, responsive layout, and text) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 722.83 Td (scaling. Direct Python tests cover runtime output, errors, blocked imports, and output truncation.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 3) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 3986 >>
+stream
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 773.89 Td (3. Validation evidence snapshot) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 756.89 m 547.28 756.89 l S
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 747.89 Td (The following results are the latest recorded local validation evidence for the current workspace.) Tj ET
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 734.78 Td (They are not a substitute for a hosted CI run or a signed distribution test.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 714.67 Td ([IMPLEMENTED] Dart analyzer) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 701.17 Td (Command: flutter analyze --no-pub. Result: PASS - no issues found.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 682.89 Td ([IMPLEMENTED] Flutter tests) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 669.39 Td (Command: flutter test --no-pub. Result: PASS - 31 tests.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 651.11 Td ([IMPLEMENTED] Python tests) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 637.61 Td (Command: python -m unittest discover -s python_src -p test_*.py. Result: PASS - 4 tests.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 619.32 Td ([IMPLEMENTED] Runtime archive) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 605.82 Td (Command: python tooling/package_python_runtime.py --check. Result: PASS - archive current.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 587.54 Td ([IMPLEMENTED] Whitespace) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 574.04 Td (Command: git diff --check. Result: PASS.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 555.76 Td ([IMPLEMENTED] Debug APK) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 542.26 Td (Command: flutter build apk --debug --no-pub. Result: PASS.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 523.98 Td ([IMPLEMENTED] Web build) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 510.48 Td (Command: flutter build web --no-pub. Result: PASS; wasm/font warnings only.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 492.20 Td ([IMPLEMENTED] Release AAB) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 478.70 Td (Command: flutter build appbundle --release --no-pub. Result: PASS after native-symbol packaging fix.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 460.41 Td ([IMPLEMENTED] Gradle symbols) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 446.91 Td (Command: app:stripReleaseDebugSymbols --stacktrace --no-daemon. Result: PASS.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 428.63 Td ([IMPLEMENTED] Android device) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 415.13 Td (Command: adb install/relaunch/UI dump on serial 98e86dfe. Result: PASS; controls and curriculum visible.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 396.85 Td ([IMPLEMENTED] Crash check) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 383.35 Td (Command: App-scoped logcat for com.example.python_forge. Result: No FATAL EXCEPTION or AndroidRuntime) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 371.07 Td (crash.) Tj ET
+0.980 0.940 0.860 rg 48.00 283.29 499.28 70.50 re f
+BT /F2 9.50 Tf 0.050 0.050 0.050 rg 58.00 354.79 Td (RELEASE CAVEAT) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 341.79 Td (The AAB now contains Flutter debug-symbol metadata, but the local release artifact is unsigned because) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 329.23 Td (production signing properties and a keystore were not available. Serious Python's libpythonbundle.so is) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 316.67 Td (a ZIP payload with a .so filename, so llvm-strip reports that it is not a valid object; AGP tolerates) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 304.11 Td (this and the AAB build completes.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 4) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 4270 >>
+stream
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 773.89 Td (4. Remaining gaps and new work) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 756.89 m 547.28 756.89 l S
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 747.89 Td (These items should be treated as the active backlog. They are intentionally not marked complete by) Tj ET
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 734.78 Td (the current evidence.) Tj ET
+BT /F2 10.00 Tf 0.680 0.100 0.100 rg 48.00 714.67 Td ([BLOCKED] True killable execution sandbox) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 701.17 Td (Move learner execution into a separate process or external sandbox with a reliable kill/restart boundary.) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 688.89 Td (Add OS-level CPU, wall-clock, memory, filesystem, and network controls, authenticated private IPC, and) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 676.61 Td (recovery tests for worker crashes and native blocking calls.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 658.32 Td ([PARTIAL] Real integration and device qualification) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 644.82 Td (Add integration_test coverage for asset loading, first execution, success/error/timeout UI, persistence) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 632.54 Td (after relaunch, locked routes, keyboard behavior, and next-mission navigation. Run it across target) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 620.26 Td (Android API levels, ARM64, emulator, low-memory, offline, and process-restart scenarios.) Tj ET
+BT /F2 10.00 Tf 0.680 0.100 0.100 rg 48.00 601.98 Td ([BLOCKED] Production signing and distribution) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 588.48 Td (Provide the four PYTHON_FORGE_UPLOAD_* secrets through a private Gradle or CI secret store, fail closed) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 576.20 Td (when absent, verify the signing certificate and AAB hash, and use a Play internal-testing track before) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 563.91 Td (public release.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 545.63 Td ([PARTIAL] CI quality and artifact provenance) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 532.13 Td (The checked-in workflow runs archive verification, pub get, analyze, Flutter tests, and a debug APK) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 519.85 Td (build. It still needs Python tests, integration/device tests, release AAB verification, artifact upload,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 507.57 Td (checksum manifests, pinned tool versions, and signed-release gates.) Tj ET
+BT /F2 10.00 Tf 0.080 0.300 0.620 rg 48.00 489.29 Td ([PLANNED] Curriculum graph correctness) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 475.79 Td (Add prerequisite cycle detection, a machine-readable curriculum manifest with stable version and content) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 463.50 Td (hash, migration policy, and contract tests for all 40 missions. Keep MCQ and fill-in missions) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 451.22 Td (non-executing and verify failed execution never awards completion.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 432.94 Td ([PARTIAL] Documentation and version alignment) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 419.44 Td (Align README, pubspec, Android versionName, and release naming. Add dedicated tests for claims such as) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 407.16 Td (quote normalization and document the distinction between constrained execution and a secure sandbox.) Tj ET
+BT /F2 10.00 Tf 0.350 0.220 0.520 rg 48.00 388.88 Td ([EVIDENCE GAP] Roadmap traceability) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 375.38 Td (Recover or text-extract the original PDF source if possible, preserve its SHA-256, and add an evidence) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 363.09 Td (index mapping each roadmap requirement to source symbols, tests, CI jobs, artifacts, and build identity.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 5) Tj ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 6140 >>
+stream
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 773.89 Td (5. Development phases) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 756.89 m 547.28 756.89 l S
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 747.89 Td (The phases below are intentionally short summaries. Each phase has a practical outcome and an exit) Tj ET
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 734.78 Td (condition so roadmap status can be updated from evidence instead of intention.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 714.67 Td ([PARTIAL] Phase 0 - Evidence baseline and traceability) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 701.17 Td (Recover the original roadmap text or record its extraction limitation, preserve source and artifact) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 688.89 Td (hashes, add docs/review-source.md and an evidence-index file, and embed revision/source identity in) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 676.61 Td (future PDF generation. Exit when every roadmap item has a status and an evidence reference.) Tj ET
+BT /F2 10.00 Tf 0.080 0.300 0.620 rg 48.00 658.32 Td ([PLANNED] Phase 1 - Execution hardening) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 644.82 Td (Design and implement the killable worker or external sandbox, authenticated IPC, resource controls,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 632.54 Td (timeout cleanup, and worker restart. Keep current import and builtin restrictions as defense-in-depth.) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 620.26 Td (Exit when adversarial and recovery tests prove a hostile or stuck program cannot hold the host app.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 601.98 Td ([PARTIAL] Phase 2 - Curriculum and validation correctness) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 588.48 Td (Add curriculum manifest/version/hash/migration rules, prerequisite DAG cycle checks, contract tests) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 576.20 Td (across all 40 missions, and explicit starter-code and quote-normalization behavior. Exit when content) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 563.91 Td (changes fail fast with actionable validation errors.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 545.63 Td ([PARTIAL] Phase 3 - Integration and device qualification) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 532.13 Td (Add integration tests for the real Flutter-to-runtime path, persistence, navigation, timeout recovery,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 519.85 Td (keyboard, accessibility, and relaunch. Run on the target device/API/ABI matrix and publish logs and) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 507.57 Td (screenshots. Exit when the matrix is repeatable and artifact-linked.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 489.29 Td ([PARTIAL] Phase 4 - Release and signing) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 475.79 Td (Configure secret-backed signing, fail closed without secrets, build and verify a signed AAB, retain) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 463.50 Td (mapping files and checksums, and complete Play internal testing. Exit when certificate identity and) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 451.22 Td (artifact provenance are recorded.) Tj ET
+BT /F2 10.00 Tf 0.700 0.380 0.040 rg 48.00 432.94 Td ([PARTIAL] Phase 5 - CI and evidence automation) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 419.44 Td (Pin Flutter/Python/action versions, run Python plus Dart plus integration suites, build artifacts, upload) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 407.16 Td (reports/checksums, and fail on stale runtime archives or missing roadmap metadata. Exit when a pull) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 394.88 Td (request receives the same gates as a local release candidate.) Tj ET
+BT /F2 10.00 Tf 0.080 0.300 0.620 rg 48.00 376.59 Td ([PLANNED] Phase 6 - Content and platform expansion) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 363.09 Td (Only after safety and release gates: expand curriculum, add analytics or sync where explicitly required,) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 350.81 Td (and broaden platform support. Exit criteria should be defined per feature rather than allowing new) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 338.53 Td (content to bypass the contract validator.) Tj ET
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 312.25 Td (6. Prioritized next implementation order) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 295.25 m 547.28 295.25 l S
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 286.25 Td (1. Release configuration: provide private signing secrets, verify a signed AAB, and run) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 273.65 Td (   internal-track testing) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 258.05 Td (2. Sandbox architecture spike: choose the separate process or external sandbox boundary before adding) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 245.45 Td (   more arbitrary-code features) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 229.85 Td (3. Integration/device matrix: automate real runtime startup, timeout recovery, persistence,) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 217.25 Td (   accessibility, and relaunch checks) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 201.65 Td (4. Curriculum graph and manifest: add cycle detection, content hashes, migration policy, and) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 189.05 Td (   all-mission contract validation) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 173.45 Td (5. CI/evidence automation: upload results, checksums, symbol maps, device artifacts, and roadmap) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 160.85 Td (   traceability metadata) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 145.25 Td (6. Content expansion: proceed only after the safety and release gates are green) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 6) Tj ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 6065 >>
+stream
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 773.89 Td (7. File-level evidence map) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 756.89 m 547.28 756.89 l S
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 747.89 Td (These are the principal files that support the status decisions in this revision. The complete) Tj ET
+BT /F1 9.50 Tf 0.080 0.080 0.080 rg 48.00 734.78 Td (worktree also contains the related tests, CI workflow, runtime archive, and UI changes.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 714.67 Td ([IMPLEMENTED] python_src/main.py) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 701.17 Td (Embedded service constraints, HTTP contract, output cap, import/builtin controls, and explicit) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 688.89 Td (non-sandbox limitation.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 670.61 Td ([IMPLEMENTED] lib/core/engine/python_runner.dart) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 657.11 Td (Dart readiness polling, JSON request bridge, and request timeout.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 638.82 Td ([IMPLEMENTED] tooling/package_python_runtime.py) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 625.32 Td (Deterministic app.zip creation and freshness check.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 607.04 Td ([IMPLEMENTED] lib/features/curriculum/data/repositories/curriculum_repository.dart) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 593.54 Td (Curriculum parsing and validation contract.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 575.26 Td ([IMPLEMENTED] lib/core/progression/learning_progress.dart) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 561.76 Td (Derived unlocks, prerequisites, XP, level, resume, and stale-ID sanitization.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 543.48 Td ([IMPLEMENTED] lib/core/progression/progress_manager.dart) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 529.98 Td (Idempotent completion, safe legacy migration, and progress-only reset.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 511.70 Td ([IMPLEMENTED] lib/features/curriculum/presentation/screens/mission_screen.dart) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 498.20 Td (Mission validation, execution, completion, streak, achievements, and next mission.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 479.91 Td ([IMPLEMENTED] lib/features/curriculum/presentation/screens/home_screen.dart) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 466.41 Td (Dashboard startup reconciliation, responsive title/progress layout, and semantic controls.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 448.13 Td ([IMPLEMENTED] .github/workflows/flutter.yml) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 434.63 Td (Current local CI definition and its remaining debug-only scope.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 416.35 Td ([IMPLEMENTED] android/app/build.gradle.kts) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 402.85 Td (Native packaging and conditional production signing configuration.) Tj ET
+BT /F2 10.00 Tf 0.080 0.420 0.240 rg 48.00 384.57 Td ([IMPLEMENTED] test/ and python_src/test_main.py) Tj ET
+BT /F1 8.90 Tf 0.120 0.120 0.120 rg 61.00 371.07 Td (Curriculum, answer, progress, navigation, UI, settings, and direct runtime tests.) Tj ET
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 344.79 Td (8. Risks, assumptions, and decisions) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 327.79 m 547.28 327.79 l S
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 318.79 Td (- The embedded runtime is bounded constrained execution, not a secure sandbox. Do not make a stronger) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 306.19 Td (  security claim until Phase 1 is complete.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 290.59 Td (- A release AAB build passing is not equivalent to a distributable release; signing and certificate) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 277.99 Td (  verification are still required.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 262.39 Td (- One Android device smoke pass is useful evidence but is not a device compatibility matrix.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 246.79 Td (- The original PDF remains unchanged. This updated PDF is a new artifact and does not assert that) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 234.19 Td (  unreadable original body text was reproduced exactly.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 218.59 Td (- No commit or push is implied by this document. The repository owner should approve the release and) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 205.99 Td (  sandbox decisions before creating a checkpoint commit.) Tj ET
+BT /F2 15.00 Tf 0.040 0.180 0.350 rg 48.00 180.39 Td (9. Revision change log) Tj ET
+0.82 0.84 0.88 RG 0.6 w 48.00 163.39 m 547.28 163.39 l S
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 154.39 Td (- Added explicit status labels for implemented, partial, planned, blocked, and evidence-gap work.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 138.79 Td (- Recorded completed runtime, packaging, curriculum, progression, navigation, accessibility, build,) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 126.19 Td (  test, and device changes.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 110.59 Td (- Added the current validation command/result snapshot and release-symbol packaging explanation.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 94.99 Td (- Added remaining blockers and new work for sandbox isolation, integration/device qualification,) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 82.39 Td (  signing, CI, curriculum DAG checks, version alignment, and evidence traceability.) Tj ET
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 66.79 Td (- Added brief Phases 0 through 6 and a prioritized next implementation order.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 7) Tj ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 18 0 R >>
+endobj
+20 0 obj
+<< /Length 1024 >>
+stream
+BT /F1 9.20 Tf 0.080 0.080 0.080 rg 56.00 783.89 Td (- Preserved Python_Forge_Comprehensive_Review_and_Roadmap.pdf without overwriting it.) Tj ET
+0.900 0.950 0.910 rg 48.00 709.29 499.28 58.00 re f
+BT /F2 9.50 Tf 0.050 0.050 0.050 rg 58.00 768.29 Td (CURRENT DECISION) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 755.29 Td (Python Forge is ready for continued internal development and controlled testing. It is not yet ready to) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 742.73 Td (claim secure arbitrary-code execution or public production distribution. The next highest-value work is) Tj ET
+BT /F1 9.10 Tf 0.100 0.100 0.100 rg 58.00 730.17 Td (the sandbox architecture decision followed by signed-release and integration/device gates.) Tj ET
+0.75 0.75 0.75 RG 0.5 w 48.00 38 m 547.28 38 l S
+BT /F2 7.00 Tf 0.250 0.250 0.250 rg 48.00 811.89 Td (PYTHON FORGE | UPDATED REVIEW AND ROADMAP v1.1) Tj ET
+BT /F1 7.00 Tf 0.350 0.350 0.350 rg 48.00 25.00 Td (Evidence-based update | Original PDF preserved | Page 8) Tj ET
+endstream
+endobj
+21 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 20 0 R >>
+endobj
+22 0 obj
+<< /Title (Python Forge - Updated Comprehensive Review and Roadmap) /Author (Python Forge project) /Subject (Evidence-based implementation status and development phases) /Creator (generate_updated_roadmap_pdf.py) /CreationDate (D:20260810000000+00'00') >>
+endobj
+xref
+0 23
+0000000000 65535 f
+0000000015 00000 n
+0000000064 00000 n
+0000000169 00000 n
+0000000239 00000 n
+0000000314 00000 n
+0000000382 00000 n
+0000005142 00000 n
+0000005294 00000 n
+0000011740 00000 n
+0000011892 00000 n
+0000012938 00000 n
+0000013092 00000 n
+0000017131 00000 n
+0000017285 00000 n
+0000021608 00000 n
+0000021762 00000 n
+0000027955 00000 n
+0000028109 00000 n
+0000034227 00000 n
+0000034381 00000 n
+0000035458 00000 n
+0000035612 00000 n
+trailer
+<< /Size 23 /Root 1 0 R /Info 22 0 R >>
+startxref
+35884
+%%EOF
