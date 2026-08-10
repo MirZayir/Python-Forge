@@ -12,6 +12,9 @@ Future<void> _pumpUntilFound(
   int maxFrames = 40,
 }) async {
   for (var frame = 0; frame < maxFrames; frame++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
     await tester.pump(const Duration(milliseconds: 50));
     if (finder.evaluate().isNotEmpty) return;
   }
@@ -54,9 +57,82 @@ void main() {
 
   testWidgets('dashboard uses the cream neubrutalist theme', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: PythonForgeApp()));
-    await _pumpUntilFound(tester, find.text('My Curriculum'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 250)),
+    );
+    await tester.pump();
+    await _pumpUntilFound(
+      tester,
+      find.text('RESUME LEARNING'),
+      maxFrames: 120,
+    );
+    expect(find.text('RESUME LEARNING'), findsOneWidget);
 
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
     expect(scaffold.backgroundColor, const Color(0xFFFAF8F5));
+  });
+
+  testWidgets('dashboard survives a narrow viewport', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const ProviderScope(child: PythonForgeApp()));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 250)),
+    );
+    await tester.pump();
+    await _pumpUntilFound(
+      tester,
+      find.text('RESUME LEARNING'),
+      maxFrames: 120,
+    );
+
+    expect(find.text('RESUME LEARNING'), findsOneWidget);
+
+    final curriculumHeading = find.text('My Curriculum');
+    await tester.scrollUntilVisible(
+      curriculumHeading,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('FORGE'), findsOneWidget);
+    expect(curriculumHeading, findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dashboard survives large text scaling', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await tester.pumpWidget(const ProviderScope(child: PythonForgeApp()));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 250)),
+    );
+    await tester.pump();
+    await _pumpUntilFound(
+      tester,
+      find.text('RESUME LEARNING'),
+      maxFrames: 120,
+    );
+
+    expect(find.text('RESUME LEARNING'), findsOneWidget);
+
+    final curriculumHeading = find.text('My Curriculum');
+    await tester.scrollUntilVisible(
+      curriculumHeading,
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('PYTHON FORGE'), findsOneWidget);
+    expect(curriculumHeading, findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

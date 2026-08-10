@@ -78,6 +78,68 @@ void main() {
     expect(progress.nextMission?.id, 'm2_1');
   });
 
+  test('unknown completion IDs are excluded from derived progress', () {
+    final progress = LearningProgressService.build(
+      curriculum: _curriculum,
+      completedMissionIds: const {'m1_1', 'deleted_mission'},
+    );
+
+    expect(progress.completedMissionIds, {'m1_1'});
+    expect(progress.completedMissionCount, 1);
+    expect(progress.totalXp, greaterThan(0));
+  });
+
+  test('declared prerequisites can keep a sequential mission locked', () {
+    final curriculum = Curriculum(
+      title: 'Prerequisite test',
+      description: 'Test',
+      modules: [
+        Module(
+          moduleId: 'mod_1',
+          title: 'Module 1',
+          description: 'Test',
+          order: 1,
+          missions: [
+            _mission('m1_1'),
+            _mission('m1_2'),
+          ],
+        ),
+      ],
+    );
+    const gatedMission = Mission(
+      id: 'm1_2',
+      title: 'Gated mission',
+      description: 'Test',
+      objective: 'Test',
+      type: MissionType.code,
+      prerequisites: ['m1_3'],
+      validationRules: ValidationRules(
+        type: 'exact_match',
+        validAnswers: ['print("x")'],
+      ),
+    );
+    final gatedCurriculum = Curriculum(
+      title: curriculum.title,
+      description: curriculum.description,
+      modules: [
+        Module(
+          moduleId: 'mod_1',
+          title: 'Module 1',
+          description: 'Test',
+          order: 1,
+          missions: [_mission('m1_1'), gatedMission, _mission('m1_3')],
+        ),
+      ],
+    );
+
+    final progress = LearningProgressService.build(
+      curriculum: gatedCurriculum,
+      completedMissionIds: const {'m1_1'},
+    );
+
+    expect(progress.isMissionUnlocked('m1_2'), isFalse);
+  });
+
   test('full completion reports no next mission', () {
     final progress = LearningProgressService.build(
       curriculum: _curriculum,

@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android/Gradle generated build output
+/android/app/build/
+/android/build/
+/android/.gradle/
