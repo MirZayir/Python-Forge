@@ -27,7 +27,10 @@ Mission _mission({
   );
 }
 
-Curriculum _curriculum(Mission mission) {
+Curriculum _curriculum(
+  Mission mission, {
+  List<Mission> additionalMissions = const [],
+}) {
   return Curriculum(
     title: 'Test curriculum',
     description: 'A valid test curriculum description.',
@@ -37,7 +40,7 @@ Curriculum _curriculum(Mission mission) {
         title: 'Test module',
         description: 'A valid test module description.',
         order: 1,
-        missions: [mission],
+        missions: [mission, ...additionalMissions],
       ),
     ],
   );
@@ -81,6 +84,26 @@ void main() {
   test('rejects unknown prerequisite references', () {
     expectInvalid(
       _curriculum(_mission(prerequisites: const ['does_not_exist'])),
+    );
+  });
+
+  test('rejects non-canonical prerequisite whitespace', () {
+    expectInvalid(
+      _curriculum(
+        _mission(prerequisites: const [' test_mission_2 ']),
+        additionalMissions: [_mission(id: 'test_mission_2')],
+      ),
+    );
+  });
+
+  test('rejects prerequisite cycles', () {
+    expectInvalid(
+      _curriculum(
+        _mission(id: 'mission_a', prerequisites: const ['mission_b']),
+        additionalMissions: [
+          _mission(id: 'mission_b', prerequisites: const ['mission_a']),
+        ],
+      ),
     );
   });
 

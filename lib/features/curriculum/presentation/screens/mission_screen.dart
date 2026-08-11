@@ -492,8 +492,7 @@ class _MissionScreenState extends State<MissionScreen> {
                 GestureDetector(
                   onTap: () {
                     HapticService.lightImpact();
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop();
+                    Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   child: Container(
                     height: 50,

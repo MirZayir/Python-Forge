@@ -32,6 +32,12 @@ class ExecutionServiceTests(unittest.TestCase):
             len(result["output"]), MAX_OUTPUT_CHARS + len("\n... output truncated ...")
         )
 
+    def test_pure_python_timeout_is_structured(self):
+        result = execute("while True: pass")
+        self.assertTrue(result["has_error"])
+        self.assertEqual(result["error_type"], "ExecutionTimeout")
+        self.assertIn("second limit", result["output"])
+
 
 if __name__ == "__main__":
     unittest.main()

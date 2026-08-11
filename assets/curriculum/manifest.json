@@ -1,0 +1,14 @@
+{
+  "manifest_version": 1,
+  "curriculum_id": "python_mastery",
+  "curriculum_version": "1.0.0",
+  "content_path": "assets/curriculum/missions.json",
+  "content_sha256": "086003cff6e5b551bb02b8f9fbfe576bc2931dbdcee8aa4cfc80d5eb783aba89",
+  "hash_algorithm": "sha256",
+  "canonicalization": "json-v1-sort-keys-no-whitespace",
+  "migration_policy": {
+    "stable_id_field": "mission.id",
+    "unknown_completion_ids": "discard",
+    "content_change": "require_manifest_update"
+  }
+}

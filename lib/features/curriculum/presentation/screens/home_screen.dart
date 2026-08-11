@@ -779,25 +779,34 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            runSpacing: 4,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                'OVERALL PROGRESS',
-                style: TextStyle(
-                  color: Color(0xFF666666),
-                  fontSize: 11.0,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
+              const Expanded(
+                child: Text(
+                  'OVERALL PROGRESS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFF666666),
+                    fontSize: 11.0,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
-              Text(
-                '${progress.completedMissionCount}/${progress.totalMissionCount} • Lvl ${progress.level}',
-                style: const TextStyle(
-                  color: AppColors.borderBlack,
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.w900,
+              const SizedBox(width: AppSpacing.small),
+              Expanded(
+                child: Text(
+                  '${progress.completedMissionCount}/${progress.totalMissionCount} • Lvl ${progress.level}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    color: AppColors.borderBlack,
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],

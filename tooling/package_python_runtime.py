@@ -4,13 +4,15 @@ Usage:
     python tooling/package_python_runtime.py --write
     python tooling/package_python_runtime.py --check
 
-The Flutter asset at app/app.zip must contain the exact bytes of
-python_src/main.py. Keeping this check in the repository prevents a source
-change from silently shipping with an older embedded interpreter.
+The Flutter assets at app/app.zip and app/runtime_manifest.json are generated
+from the exact bytes of python_src/main.py. Keeping this check in the
+repository prevents a source change from silently shipping with an older
+embedded interpreter and lets the app verify the packaged archive at startup.
 """
 
 import argparse
 import hashlib
+import json
 import sys
 import zipfile
 from pathlib import Path
@@ -18,6 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "python_src" / "main.py"
 ARCHIVE = ROOT / "app" / "app.zip"
+MANIFEST = ROOT / "app" / "runtime_manifest.json"
+MANIFEST_VERSION = 1
 
 
 def _source_bytes():
@@ -28,6 +32,24 @@ def _source_bytes():
 
 def _sha256(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def _manifest(source_hash, archive_hash):
+    return {
+        "manifest_version": MANIFEST_VERSION,
+        "source_path": "python_src/main.py",
+        "source_sha256": source_hash,
+        "archive_path": "app/app.zip",
+        "archive_sha256": archive_hash,
+    }
+
+
+def _write_manifest(source_hash, archive_hash):
+    MANIFEST.write_text(
+        json.dumps(_manifest(source_hash, archive_hash), indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def write_archive():
@@ -44,7 +66,18 @@ def write_archive():
         info.create_system = 3
         info.external_attr = 0o100644 << 16
         archive.writestr(info, source)
-    print("wrote {} (sha256={})".format(ARCHIVE.relative_to(ROOT), _sha256(source)))
+
+    source_hash = _sha256(source)
+    archive_hash = _sha256(ARCHIVE.read_bytes())
+    _write_manifest(source_hash, archive_hash)
+    print(
+        "wrote {} and {} (source_sha256={}, archive_sha256={})".format(
+            ARCHIVE.relative_to(ROOT),
+            MANIFEST.relative_to(ROOT),
+            source_hash,
+            archive_hash,
+        )
+    )
 
 
 def check_archive():
@@ -64,8 +97,28 @@ def check_archive():
         raise ValueError(
             "app/app.zip is stale: its main.py does not match python_src/main.py"
         )
+
+    if not MANIFEST.is_file():
+        raise FileNotFoundError("Missing runtime manifest: {}".format(MANIFEST))
+    try:
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise ValueError("Runtime manifest is not valid JSON.") from error
+    if not isinstance(manifest, dict):
+        raise ValueError("Runtime manifest must be a JSON object.")
+
+    source_hash = _sha256(source)
+    archive_hash = _sha256(ARCHIVE.read_bytes())
+    expected = _manifest(source_hash, archive_hash)
+    if manifest != expected:
+        raise ValueError(
+            "Runtime manifest is stale or does not match the packaged archive."
+        )
+
     print(
-        "runtime archive is current (sha256={})".format(_sha256(source))
+        "runtime archive is current (source_sha256={}, archive_sha256={})".format(
+            source_hash, archive_hash
+        )
     )
 
 

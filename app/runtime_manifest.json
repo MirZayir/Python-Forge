@@ -1,0 +1,7 @@
+{
+  "archive_path": "app/app.zip",
+  "archive_sha256": "b7152dddf56c4944e180f83c83b5aff753fc167d9258917a419d47dd8da47fa5",
+  "manifest_version": 1,
+  "source_path": "python_src/main.py",
+  "source_sha256": "c8e20dc3682da9b4ca2899f87b77dc4028fb1728fafdcac894893f631671f7b8"
+}

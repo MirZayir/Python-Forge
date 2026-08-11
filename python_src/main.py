@@ -12,7 +12,9 @@ separate killable process or an external sandbox.
 """
 
 import builtins
+import hmac
 import json
+import os
 import signal
 import sys
 import time
@@ -21,7 +23,28 @@ from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HOST = "127.0.0.1"
-PORT = 8765
+
+
+def _configured_port():
+    raw_port = os.environ.get("PYTHON_FORGE_PORT", "8765")
+    try:
+        port = int(raw_port)
+    except ValueError as error:
+        raise ValueError("PYTHON_FORGE_PORT must be an integer.") from error
+    if not 1 <= port <= 65535:
+        raise ValueError("PYTHON_FORGE_PORT must be between 1 and 65535.")
+    return port
+
+
+PORT = _configured_port()
+# Tests invoke execute() directly and intentionally do not need HTTP auth.
+TEST_MODE = os.environ.get("PYTHON_FORGE_TEST") == "1"
+AUTH_TOKEN = os.environ.get("PYTHON_FORGE_AUTH_TOKEN", "")
+if not TEST_MODE and not AUTH_TOKEN:
+    raise RuntimeError(
+        "PYTHON_FORGE_AUTH_TOKEN is required outside explicit test mode."
+    )
+AUTH_HEADER = "X-Python-Forge-Token"
 MAX_REQUEST_BYTES = 128 * 1024
 MAX_OUTPUT_CHARS = 20_000
 MAX_EXECUTION_SECONDS = 5.0
@@ -273,7 +296,30 @@ class ExecutionHandler(BaseHTTPRequestHandler):
             )
         return self.rfile.read(length) if length > 0 else b""
 
+    def _is_authorized(self):
+        if TEST_MODE:
+            return True
+        return bool(AUTH_TOKEN) and hmac.compare_digest(
+            self.headers.get(AUTH_HEADER, ""), AUTH_TOKEN
+        )
+
+    def _reject_unauthorized(self):
+        self.close_connection = True
+        self._send_json(
+            403,
+            {
+                "output": "The Python worker rejected the execution request.",
+                "has_error": True,
+                "error_type": "PermissionError",
+                "truncated": False,
+            },
+        )
+
     def do_POST(self):
+        if not self._is_authorized():
+            self._reject_unauthorized()
+            return
+
         try:
             raw = self._read_body() or b"{}"
             payload = json.loads(raw.decode("utf-8") or "{}")
@@ -316,7 +362,11 @@ class ExecutionHandler(BaseHTTPRequestHandler):
             )
 
     def do_GET(self):
+        if not self._is_authorized():
+            self._reject_unauthorized()
+            return
         self._send_json(200, {"output": "", "has_error": False, "ready": True})
+
 
     def log_message(self, fmt, *args):
         return

@@ -155,12 +155,162 @@ class AnswerValidator {
 
   static String _normalizeCode(String input) {
     final lines = input
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
         .split('\n')
         .map(_stripCommentOutsideString)
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .map((line) => line.replaceAll(RegExp(r'\s+'), ' '));
+        .map(_normalizeCodeLine)
+        .where((line) => line.isNotEmpty);
     return lines.join('\n').trim();
+  }
+
+  /// Canonicalizes Python tokens while preserving string literal contents.
+  ///
+  /// This makes formatting-only variants such as `age=18` and `age = 18`
+  /// compare equally without collapsing meaningful text inside strings or
+  /// confusing `=` with operators such as `==` and `+=`.
+  static String _normalizeCodeLine(String line) {
+    final tokens = <String>[];
+    var index = 0;
+
+    while (index < line.length) {
+      final character = line[index];
+      if (character.trim().isEmpty) {
+        index++;
+        continue;
+      }
+
+      if (character == '"' || character == "'") {
+        final start = index;
+        final delimiter = line.startsWith('"""', index)
+            ? '"""'
+            : line.startsWith("'''", index)
+                ? "'''"
+                : character;
+        var escaped = false;
+        index += delimiter.length;
+
+        while (index < line.length) {
+          if (escaped) {
+            escaped = false;
+            index++;
+            continue;
+          }
+          if (line[index] == '\\') {
+            escaped = true;
+            index++;
+            continue;
+          }
+          if (line.startsWith(delimiter, index)) {
+            index += delimiter.length;
+            break;
+          }
+          index++;
+        }
+
+        tokens.add(line.substring(start, index));
+        continue;
+      }
+
+      if (_isIdentifierStart(character)) {
+        final start = index;
+        index++;
+        while (index < line.length && _isIdentifierPart(line[index])) {
+          index++;
+        }
+        tokens.add(line.substring(start, index));
+        continue;
+      }
+
+      if (_isDigit(character) ||
+          (character == '.' &&
+              index + 1 < line.length &&
+              _isDigit(line[index + 1]))) {
+        final start = index;
+        if (character == '.') index++;
+        while (index < line.length && _isDigit(line[index])) {
+          index++;
+        }
+        if (index < line.length && line[index] == '.') {
+          index++;
+          while (index < line.length && _isDigit(line[index])) {
+            index++;
+          }
+        }
+        if (index < line.length && (line[index] == 'e' || line[index] == 'E')) {
+          var exponentIndex = index + 1;
+          if (exponentIndex < line.length &&
+              (line[exponentIndex] == '+' || line[exponentIndex] == '-')) {
+            exponentIndex++;
+          }
+          final exponentDigitsStart = exponentIndex;
+          while (exponentIndex < line.length && _isDigit(line[exponentIndex])) {
+            exponentIndex++;
+          }
+          if (exponentIndex > exponentDigitsStart) {
+            index = exponentIndex;
+          }
+        }
+        tokens.add(line.substring(start, index));
+        continue;
+      }
+
+      const multiCharacterOperators = [
+        '**=',
+        '//=',
+        '<<=',
+        '>>=',
+        '...',
+        '==',
+        '!=',
+        '<=',
+        '>=',
+        '+=',
+        '-=',
+        '*=',
+        '/=',
+        '%=',
+        '&=',
+        '|=',
+        '^=',
+        ':=',
+        '//',
+        '**',
+        '<<',
+        '>>',
+        '->',
+      ];
+      final operator = multiCharacterOperators.cast<String?>().firstWhere(
+            (candidate) =>
+                candidate != null && line.startsWith(candidate, index),
+            orElse: () => null,
+          );
+      if (operator != null) {
+        tokens.add(operator);
+        index += operator.length;
+      } else {
+        tokens.add(character);
+        index++;
+      }
+    }
+
+    return tokens.join(' ');
+  }
+
+  static bool _isIdentifierStart(String character) {
+    final code = character.codeUnitAt(0);
+    return code == 0x5f ||
+        (code >= 0x41 && code <= 0x5a) ||
+        (code >= 0x61 && code <= 0x7a);
+  }
+
+  static bool _isIdentifierPart(String character) {
+    return _isIdentifierStart(character) || _isDigit(character);
+  }
+
+  static bool _isDigit(String character) {
+    final code = character.codeUnitAt(0);
+    return code >= 0x30 && code <= 0x39;
   }
 
   static String _stripCommentOutsideString(String line) {

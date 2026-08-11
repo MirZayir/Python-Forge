@@ -245,7 +245,7 @@ class _CodeEditorWidgetState extends State<CodeEditorWidget> {
                               hintMaxLines: 1,
                               hintStyle: TextStyle(
                                 fontFamily: 'monospace',
-                                fontSize: _fontSize,
+                                fontSize: math.min(_fontSize, 11.0),
                                 color: const Color(0xFF757575)
                                     .withValues(alpha: 0.6),
                                 height: 1.5,

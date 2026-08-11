@@ -23,18 +23,22 @@ android {
 
     packaging {
         jniLibs {
-            // serious_python loads the CPython runtime from the extracted
-            // native library directory (/lib/<abi>/libpythonbundle.so).
-            // Without legacy packaging AGP keeps .so files compressed inside
-            // the APK, they are never extracted, and Python cannot start.
+            // serious_python packages the CPython bundle as a ZIP payload
+            // with a .so filename. It must be extracted for loading, but it
+            // is not an ELF object that llvm-strip can process.
             useLegacyPackaging = true
+            keepDebugSymbols.add("**/libpythonbundle.so")
         }
     }
 
-    val releaseStoreFile = providers.gradleProperty("PYTHON_FORGE_UPLOAD_STORE_FILE").orNull
-    val releaseStorePassword = providers.gradleProperty("PYTHON_FORGE_UPLOAD_STORE_PASSWORD").orNull
-    val releaseKeyAlias = providers.gradleProperty("PYTHON_FORGE_UPLOAD_KEY_ALIAS").orNull
-    val releaseKeyPassword = providers.gradleProperty("PYTHON_FORGE_UPLOAD_KEY_PASSWORD").orNull
+    fun configuredSecret(name: String) = providers.gradleProperty(name)
+        .orElse(providers.environmentVariable(name))
+        .orNull
+
+    val releaseStoreFile = configuredSecret("PYTHON_FORGE_UPLOAD_STORE_FILE")
+    val releaseStorePassword = configuredSecret("PYTHON_FORGE_UPLOAD_STORE_PASSWORD")
+    val releaseKeyAlias = configuredSecret("PYTHON_FORGE_UPLOAD_KEY_ALIAS")
+    val releaseKeyPassword = configuredSecret("PYTHON_FORGE_UPLOAD_KEY_PASSWORD")
     val hasReleaseSigning = listOf(
         releaseStoreFile,
         releaseStorePassword,
@@ -65,6 +69,40 @@ android {
             }
         }
     }
+}
+
+val verifyPythonForgeReleaseSigning = tasks.register("verifyPythonForgeReleaseSigning") {
+    doLast {
+        val signingConfigured = providers.gradleProperty("PYTHON_FORGE_UPLOAD_STORE_FILE")
+            .orElse(providers.environmentVariable("PYTHON_FORGE_UPLOAD_STORE_FILE"))
+            .orNull
+        val signingValuesPresent = listOf(
+            signingConfigured,
+            providers.gradleProperty("PYTHON_FORGE_UPLOAD_STORE_PASSWORD")
+                .orElse(providers.environmentVariable("PYTHON_FORGE_UPLOAD_STORE_PASSWORD"))
+                .orNull,
+            providers.gradleProperty("PYTHON_FORGE_UPLOAD_KEY_ALIAS")
+                .orElse(providers.environmentVariable("PYTHON_FORGE_UPLOAD_KEY_ALIAS"))
+                .orNull,
+            providers.gradleProperty("PYTHON_FORGE_UPLOAD_KEY_PASSWORD")
+                .orElse(providers.environmentVariable("PYTHON_FORGE_UPLOAD_KEY_PASSWORD"))
+                .orNull,
+        ).all { !it.isNullOrBlank() }
+        if (!signingValuesPresent) {
+            throw GradleException(
+                "Release signing is not configured. Set all PYTHON_FORGE_UPLOAD_* properties or environment variables; unsigned release artifacts are blocked.",
+            )
+        }
+        if (!file(signingConfigured!!).isFile) {
+            throw GradleException(
+                "Release signing store file does not exist: $signingConfigured",
+            )
+        }
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(verifyPythonForgeReleaseSigning)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

@@ -13,6 +13,7 @@ dependencies:
   go_router: ^13.2.0
   shared_preferences: ^2.5.3
   serious_python: ^1.0.1
+  crypto: 3.0.7
 
 dev_dependencies:
   flutter_test:
@@ -23,4 +24,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/curriculum/missions.json
+    - assets/curriculum/manifest.json
     - app/app.zip
+    - app/runtime_manifest.json

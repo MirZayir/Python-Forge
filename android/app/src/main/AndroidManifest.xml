@@ -23,6 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <service
+            android:name=".PythonWorkerService"
+            android:exported="false"
+            android:process=":python_worker"
+            android:stopWithTask="true" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/models/curriculum.dart';
@@ -19,6 +20,9 @@ class CurriculumLoadException implements Exception {
 
 /// Single source of truth for the bundled curriculum contract.
 class CurriculumRepository {
+  static const _curriculumAssetPath = 'assets/curriculum/missions.json';
+  static const _curriculumManifestAssetPath = 'assets/curriculum/manifest.json';
+
   Curriculum? _cachedCurriculum;
 
   Future<Curriculum> getCurriculum() async {
@@ -27,10 +31,17 @@ class CurriculumRepository {
 
     try {
       final jsonString = await rootBundle.loadString(
-        'assets/curriculum/missions.json',
+        _curriculumAssetPath,
         cache: false,
       );
-      final curriculum = Curriculum.fromJson(jsonDecode(jsonString));
+      final manifestString = await rootBundle.loadString(
+        _curriculumManifestAssetPath,
+        cache: false,
+      );
+      final curriculumSource = jsonDecode(jsonString);
+      final manifestSource = jsonDecode(manifestString);
+      final curriculum = Curriculum.fromJson(curriculumSource);
+      _validateManifest(manifestSource, curriculumSource, curriculum);
       _validate(curriculum);
       _cachedCurriculum = curriculum;
       return curriculum;
@@ -38,7 +49,7 @@ class CurriculumRepository {
       rethrow;
     } catch (error) {
       throw CurriculumLoadException(
-        'Failed to load assets/curriculum/missions.json',
+        'Failed to load bundled curriculum assets.',
         error,
       );
     }
@@ -49,6 +60,83 @@ class CurriculumRepository {
   /// Validates an already parsed curriculum for authoring and contract tests.
   /// Runtime loading uses the same method before caching the asset.
   void validateCurriculum(Curriculum curriculum) => _validate(curriculum);
+
+  static void _validateManifest(
+    Object? source,
+    Object? curriculumSource,
+    Curriculum curriculum,
+  ) {
+    if (source is! Map<String, dynamic>) {
+      throw const CurriculumLoadException(
+        'The curriculum manifest must be a JSON object.',
+      );
+    }
+
+    final manifestVersion = source['manifest_version'];
+    final curriculumId = source['curriculum_id'];
+    final curriculumVersion = source['curriculum_version'];
+    final contentPath = source['content_path'];
+    final contentSha256 = source['content_sha256'];
+    final hashAlgorithm = source['hash_algorithm'];
+    final canonicalization = source['canonicalization'];
+    final migrationPolicy = source['migration_policy'];
+
+    if (manifestVersion != 1 ||
+        curriculumId != curriculum.id ||
+        curriculumVersion != curriculum.version ||
+        contentPath != _curriculumAssetPath ||
+        hashAlgorithm != 'sha256' ||
+        canonicalization != 'json-v1-sort-keys-no-whitespace' ||
+        !_isSha256(contentSha256)) {
+      throw const CurriculumLoadException(
+        'The curriculum manifest has an invalid schema or identity.',
+      );
+    }
+
+    if (migrationPolicy is! Map<String, dynamic> ||
+        migrationPolicy['stable_id_field'] != 'mission.id' ||
+        migrationPolicy['unknown_completion_ids'] != 'discard' ||
+        migrationPolicy['content_change'] != 'require_manifest_update') {
+      throw const CurriculumLoadException(
+        'The curriculum manifest has an unsupported migration policy.',
+      );
+    }
+
+    final actualHash = _canonicalJsonHash(curriculumSource);
+    if (actualHash != contentSha256) {
+      throw CurriculumLoadException(
+        'The curriculum content hash does not match its manifest: '
+        'expected $contentSha256, got $actualHash.',
+      );
+    }
+  }
+
+  static String _canonicalJsonHash(Object? source) {
+    final canonicalJson = _canonicalJson(source);
+    return sha256.convert(utf8.encode(canonicalJson)).toString();
+  }
+
+  static String _canonicalJson(Object? source) {
+    if (source is Map) {
+      final keys = source.keys.cast<String>().toList()..sort();
+      return '{${keys.map((key) {
+        return '${jsonEncode(key)}:${_canonicalJson(source[key])}';
+      }).join(',')}}';
+    }
+    if (source is List) {
+      return '[${source.map((value) => _canonicalJson(value)).join(',')}]';
+    }
+    if (source == null || source is String || source is num || source is bool) {
+      return jsonEncode(source);
+    }
+    throw const FormatException(
+      'Curriculum content contains a value that cannot be canonicalized.',
+    );
+  }
+
+  static bool _isSha256(Object? value) {
+    return value is String && RegExp(r'^[0-9a-f]{64}$').hasMatch(value);
+  }
 
   void _validate(Curriculum curriculum) {
     if (curriculum.id.trim().isEmpty || curriculum.version.trim().isEmpty) {
@@ -71,12 +159,18 @@ class CurriculumRepository {
     final moduleIds = <String>{};
     final moduleOrders = <int>{};
     final missionIds = <String>{};
+    final prerequisitesByMission = <String, List<String>>{};
     final prerequisiteLinks = <({String missionId, String prerequisiteId})>[];
 
     for (final module in curriculum.modules) {
       final moduleId = module.moduleId.trim();
       if (moduleId.isEmpty) {
         throw const CurriculumLoadException('Every module needs a stable ID.');
+      }
+      if (module.moduleId != moduleId) {
+        throw CurriculumLoadException(
+          'Module IDs must not contain surrounding whitespace: $moduleId',
+        );
       }
       if (!moduleIds.add(moduleId)) {
         throw CurriculumLoadException('Duplicate module ID: $moduleId');
@@ -105,6 +199,11 @@ class CurriculumRepository {
         if (missionId.isEmpty) {
           throw CurriculumLoadException(
             'Module $moduleId contains a mission without an ID.',
+          );
+        }
+        if (mission.id != missionId) {
+          throw CurriculumLoadException(
+            'Mission IDs must not contain surrounding whitespace: $missionId',
           );
         }
         if (!missionIds.add(missionId)) {
@@ -160,17 +259,21 @@ class CurriculumRepository {
           );
         }
 
+        final hasWhitespacePrerequisite = mission.prerequisites
+            .any((prerequisite) => prerequisite != prerequisite.trim());
         final prerequisites = mission.prerequisites
             .map((prerequisite) => prerequisite.trim())
             .where((prerequisite) => prerequisite.isNotEmpty)
             .toList(growable: false);
-        if (prerequisites.length != mission.prerequisites.length ||
+        if (hasWhitespacePrerequisite ||
+            prerequisites.length != mission.prerequisites.length ||
             prerequisites.length != prerequisites.toSet().length ||
             prerequisites.contains(missionId)) {
           throw CurriculumLoadException(
             'Mission $missionId contains invalid prerequisite references.',
           );
         }
+        prerequisitesByMission[missionId] = prerequisites;
         for (final prerequisite in prerequisites) {
           prerequisiteLinks.add(
             (missionId: missionId, prerequisiteId: prerequisite),
@@ -185,6 +288,36 @@ class CurriculumRepository {
           'Mission ${link.missionId} references unknown prerequisite ${link.prerequisiteId}.',
         );
       }
+    }
+
+    _validatePrerequisiteGraph(missionIds, prerequisitesByMission);
+  }
+
+  static void _validatePrerequisiteGraph(
+    Set<String> missionIds,
+    Map<String, List<String>> prerequisitesByMission,
+  ) {
+    final visitState = <String, int>{};
+
+    void visit(String missionId) {
+      final state = visitState[missionId] ?? 0;
+      if (state == 1) {
+        throw CurriculumLoadException(
+          'Prerequisite graph contains a cycle involving mission $missionId.',
+        );
+      }
+      if (state == 2) return;
+
+      visitState[missionId] = 1;
+      for (final prerequisite
+          in prerequisitesByMission[missionId] ?? const []) {
+        visit(prerequisite);
+      }
+      visitState[missionId] = 2;
+    }
+
+    for (final missionId in missionIds) {
+      visit(missionId);
     }
   }
 

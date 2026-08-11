@@ -245,23 +245,28 @@ def add_document_content(doc: Document) -> None:
     )
     doc.add_heading("1. Executive status", 1)
     doc.add_paragraph(
-        "The main application-quality recommendations have been implemented and validated locally. The project is not yet production-ready for hostile arbitrary-code execution or public release because the runtime is still in-process and the release artifact is unsigned.",
+        "The main application-quality recommendations have been implemented and validated locally. Android now runs the embedded interpreter in a killable application-owned worker process, but the runtime remains constrained execution rather than a complete security sandbox because resource isolation and non-Android worker backends are still incomplete. Public release is also blocked until a production-signed artifact is built and verified.",
         10,
     )
     doc.add_status(
         "IMPLEMENTED",
         "Core product hardening",
-        "Runtime request limits, best-effort execution deadlines, deterministic archive packaging, curriculum contracts, guarded navigation, progression reconciliation, achievement persistence, semantic controls, and responsive layout protections are present in the workspace.",
+        "Runtime request limits, best-effort execution deadlines, Android process-worker supervision, authenticated loopback transport, deterministic archive and manifest verification, curriculum contracts, guarded navigation, progression reconciliation, achievement persistence, semantic controls, and responsive layout protections are present in the workspace.",
     )
     doc.add_status(
         "PARTIAL",
         "Release and evidence gates",
-        "The release AAB build and native-symbol check pass locally, and a CI workflow exists, but hosted CI provenance, integration/device artifacts, signing verification, and full roadmap traceability remain incomplete.",
+        "The expanded CI workflow now covers Python compilation/tests, Dart formatting/analyze/tests, web and debug APK builds, and uploaded artifact checksums. Hosted CI provenance, integration/device artifacts, signing verification, and full roadmap traceability remain incomplete.",
+    )
+    doc.add_status(
+        "PARTIAL",
+        "Android process worker",
+        "Android now launches Serious Python in an application-owned :python_worker process and requests termination of that process after a request failure or timeout, reporting whether the stop was confirmed. Desktop, iOS, and web still use or require constrained fallbacks, and OS-level resource limits plus full cross-platform coverage remain incomplete.",
     )
     doc.add_status(
         "BLOCKED",
-        "Production sandbox and signing",
-        "A separate killable execution worker or external sandbox has not been implemented. Production signing secrets and a keystore are not available, so the locally generated release AAB is unsigned.",
+        "Production signing and distribution",
+        "Production signing secrets and a keystore are not available, so a signed release AAB, certificate verification, and Play internal-track evidence cannot yet be produced.",
     )
     doc.add_heading("Status legend", 2)
     doc.add_paragraph(
@@ -278,35 +283,35 @@ def add_document_content(doc: Document) -> None:
     doc.add_heading("2.1 Runtime and execution constraints", 2)
     doc.add_status(
         "IMPLEMENTED",
-        "Bounded embedded execution",
-        "python_src/main.py applies a 5-second best-effort deadline using tracing on all platforms and signals where available. It caps requests at 128 KiB, caps output at 20,000 characters, serializes HTTP execution, structures errors, blocks common unsafe imports/builtins, and keeps SystemExit from terminating the service.",
+        "Constrained execution policy",
+        "python_src/main.py applies a 5-second best-effort deadline using tracing on all platforms and signals where available. It caps requests at 128 KiB, caps output at 20,000 characters, serializes HTTP execution, requires a per-launch authentication token outside explicit tests, blocks common unsafe imports/builtins, and keeps SystemExit from terminating the service.",
     )
     doc.add_status(
         "IMPLEMENTED",
         "Dart bridge timeout and recovery",
-        "lib/core/engine/python_runner.dart performs readiness polling, sends bounded JSON requests, and applies an 8-second request guard. Android validation covered successful output, syntax errors, runtime errors, an infinite loop timeout, and a successful execution after timeout recovery.",
+        "lib/core/engine/python_runner.dart performs readiness polling, verifies the packaged runtime hash, sends authenticated bounded JSON requests, and applies an 8-second request guard. On Android a timeout requests termination of the separate worker process and reports whether it was confirmed; local device validation covered successful output and a successful execution after worker startup.",
     )
     doc.add_status(
         "PARTIAL",
         "Security isolation",
-        "The current implementation explicitly remains a constrained execution environment, not a security sandbox. A learner program can still run inside the host process and the deadline is best-effort for native or C-level blocking work.",
+        "Android now has a real process kill boundary, but the complete product remains constrained execution rather than a security sandbox: native resource limits, filesystem/network isolation, and desktop and iOS worker backends remain incomplete. Web builds explicitly report execution as unsupported until a Web Worker/WASM backend exists.",
     )
     doc.add_heading("2.2 Runtime archive and build packaging", 2)
     doc.add_status(
         "IMPLEMENTED",
-        "Reproducible runtime archive",
-        "tooling/package_python_runtime.py verifies that app/app.zip contains the expected main.py payload and matches python_src/main.py byte-for-byte. The latest verified archive SHA-256 is ab973bb99f857362ae0875d3a8e489d19e0a7999059ff47756df6bcabfe208bf.",
+        "Reproducible runtime archive and manifest",
+        "tooling/package_python_runtime.py verifies that app/app.zip contains the expected main.py payload, matches python_src/main.py byte-for-byte, and matches the generated app/runtime_manifest.json. The latest verified source SHA-256 is c8e20dc3682da9b4ca2899f87b77dc4028fb1728fafdcac894893f631671f7b8 and archive SHA-256 is b7152dddf56c4944e180f83c83b5aff753fc167d9258917a419d47dd8da47fa5; the app verifies the archive hash before startup.",
     )
     doc.add_status(
         "IMPLEMENTED",
         "Native-symbol release packaging",
-        "Removing the contradictory keepDebugSymbols setting allows Flutter's AAB check to find libflutter.so.sym and libapp.so.sym in BUNDLE-METADATA while retaining useLegacyPackaging for the embedded Python payload.",
+        "useLegacyPackaging remains enabled for the embedded Python payload, and keepDebugSymbols excludes the ZIP-formatted libpythonbundle.so from ELF stripping while preserving Flutter debug-symbol metadata for real native objects.",
     )
     doc.add_heading("2.3 Curriculum, progression, and navigation", 2)
     doc.add_status(
         "IMPLEMENTED",
         "Curriculum contracts",
-        "CurriculumRepository validates stable curriculum metadata, unique positive module order, required module and mission fields, exact-match validation, answer contracts, MCQ options, and prerequisite references before caching the asset.",
+        "CurriculumRepository validates stable curriculum metadata, unique positive module order, required module and mission fields, exact-match validation, answer contracts, MCQ options, prerequisite references, and acyclic prerequisite graphs before caching the asset.",
     )
     doc.add_status(
         "IMPLEMENTED",
@@ -333,7 +338,7 @@ def add_document_content(doc: Document) -> None:
     doc.add_status(
         "IMPLEMENTED",
         "Automated test coverage",
-        "The current suite covers answer validation, curriculum contracts, progress/unlock derivation, route protection, mission rendering, settings, streaks, achievements, cold start, responsive layout, and text scaling. Direct Python tests cover runtime output, errors, blocked imports, and output truncation.",
+        "The current suite covers answer validation, curriculum contracts including prerequisite cycles and canonical IDs, progress/unlock derivation, route protection, mission rendering, settings, streaks, achievements, cold start, responsive layout, and text scaling. Direct Python tests cover runtime output, errors, blocked imports, output truncation, pure-Python timeout handling, valid authentication, rejected tokens, and fail-closed startup.",
     )
 
     doc.page_break()
@@ -344,22 +349,21 @@ def add_document_content(doc: Document) -> None:
     )
     evidence = [
         ("Dart analyzer", "flutter analyze --no-pub", "PASS - no issues found"),
-        ("Flutter tests", "flutter test --no-pub", "PASS - 31 tests"),
-        ("Python tests", "python -m unittest discover -s python_src -p test_*.py", "PASS - 4 tests"),
-        ("Runtime archive", "python tooling/package_python_runtime.py --check", "PASS - archive current"),
+        ("Flutter tests", "flutter test --no-pub", "PASS - 33 tests"),
+        ("Python tests", "python -m unittest discover -s python_src -p test_*.py", "PASS - 8 tests"),
+        ("Runtime archive and manifest", "python tooling/package_python_runtime.py --check", "PASS - source and archive hashes match"),
         ("Whitespace", "git diff --check", "PASS"),
         ("Debug APK", "flutter build apk --debug --no-pub", "PASS"),
-        ("Web build", "flutter build web --no-pub", "PASS; wasm/font warnings only"),
-        ("Release AAB", "flutter build appbundle --release --no-pub", "PASS after native-symbol packaging fix"),
-        ("Gradle symbols", "app:stripReleaseDebugSymbols --stacktrace --no-daemon", "PASS"),
-        ("Android device", "adb install/relaunch/UI dump on serial 98e86dfe", "PASS; controls and curriculum visible"),
-        ("Crash check", "App-scoped logcat for com.example.python_forge", "No FATAL EXCEPTION or AndroidRuntime crash"),
+        ("Web build", "flutter build web --no-pub", "PASS compile-only; execution explicitly unsupported until a web backend exists"),
+        ("Android worker startup", "Local adb install/relaunch/Quick Console execution on serial 98e86dfe", "PASS manual smoke; separate com.example.python_forge:python_worker process observed and code executed; timeout/restart recovery remains unautomated"),
+        ("Release signing guard", "verifyPythonForgeReleaseSigning", "PASS when evaluated; unsigned release builds fail closed without configured secrets"),
+        ("Crash check", "Local app-scoped logcat for com.example.python_forge", "No FATAL EXCEPTION or AndroidRuntime crash during the worker smoke test"),
     ]
     for name, command, result in evidence:
         doc.add_status("IMPLEMENTED", name, f"Command: {command}. Result: {result}.")
     doc.add_callout(
         "RELEASE CAVEAT",
-        "The AAB now contains Flutter debug-symbol metadata, but the local release artifact is unsigned because production signing properties and a keystore were not available. Serious Python's libpythonbundle.so is a ZIP payload with a .so filename, so llvm-strip reports that it is not a valid object; AGP tolerates this and the AAB build completes.",
+        "A production AAB is intentionally not generated without signing properties and a keystore: the Gradle release guard fails closed instead of permitting an unsigned artifact. The debug APK and Android worker smoke test pass locally. Serious Python's libpythonbundle.so is a ZIP payload with a .so filename; keepDebugSymbols excludes it from ELF stripping while legacy packaging preserves runtime loading.",
         (0.98, 0.94, 0.86),
     )
 
@@ -370,9 +374,9 @@ def add_document_content(doc: Document) -> None:
         9.5,
     )
     doc.add_status(
-        "BLOCKED",
-        "True killable execution sandbox",
-        "Move learner execution into a separate process or external sandbox with a reliable kill/restart boundary. Add OS-level CPU, wall-clock, memory, filesystem, and network controls, authenticated private IPC, and recovery tests for worker crashes and native blocking calls.",
+        "PARTIAL",
+        "Killable execution worker",
+        "Android now has a real application-owned worker process, authenticated loopback IPC, timeout-driven stop with native confirmation when available, and next-run process-state reconciliation. It still needs adversarial native-blocking/restart tests, OS-level CPU/memory/filesystem/network controls, and equivalent desktop and iOS backends before the product can claim a secure sandbox; web execution is explicitly unsupported.",
     )
     doc.add_status(
         "PARTIAL",
@@ -387,12 +391,12 @@ def add_document_content(doc: Document) -> None:
     doc.add_status(
         "PARTIAL",
         "CI quality and artifact provenance",
-        "The checked-in workflow runs archive verification, pub get, analyze, Flutter tests, and a debug APK build. It still needs Python tests, integration/device tests, release AAB verification, artifact upload, checksum manifests, pinned tool versions, and signed-release gates.",
+        "The checked-in workflow now runs archive/manifest verification, Python compilation/tests, pinned Flutter/Python setup, Dart formatting/analyze/tests, web and debug APK builds, and uploads checksums plus validation artifacts. It still needs hosted evidence, integration/device tests, and a signed-release job.",
     )
     doc.add_status(
-        "PLANNED",
+        "PARTIAL",
         "Curriculum graph correctness",
-        "Add prerequisite cycle detection, a machine-readable curriculum manifest with stable version and content hash, migration policy, and contract tests for all 40 missions. Keep MCQ and fill-in missions non-executing and verify failed execution never awards completion.",
+        "Prerequisite cycle detection and contract coverage are implemented. A machine-readable curriculum manifest with stable version/content hash, migration policy, and complete all-mission contract evidence remain planned; MCQ and fill-in missions must remain non-executing and failed execution must never award completion.",
     )
     doc.add_status(
         "PARTIAL",
@@ -413,8 +417,8 @@ def add_document_content(doc: Document) -> None:
     )
     phases = [
         ("Phase 0 - Evidence baseline and traceability", "PARTIAL", "Recover the original roadmap text or record its extraction limitation, preserve source and artifact hashes, add docs/review-source.md and an evidence-index file, and embed revision/source identity in future PDF generation. Exit when every roadmap item has a status and an evidence reference."),
-        ("Phase 1 - Execution hardening", "PLANNED", "Design and implement the killable worker or external sandbox, authenticated IPC, resource controls, timeout cleanup, and worker restart. Keep current import and builtin restrictions as defense-in-depth. Exit when adversarial and recovery tests prove a hostile or stuck program cannot hold the host app."),
-        ("Phase 2 - Curriculum and validation correctness", "PARTIAL", "Add curriculum manifest/version/hash/migration rules, prerequisite DAG cycle checks, contract tests across all 40 missions, and explicit starter-code and quote-normalization behavior. Exit when content changes fail fast with actionable validation errors."),
+        ("Phase 1 - Execution hardening", "PARTIAL", "Android now has an application-owned killable worker, authenticated IPC, archive verification, timeout cleanup, and worker startup recovery. Add adversarial native-blocking/restart tests, OS resource controls, and platform-specific desktop, iOS, and web backends. Exit when each supported platform proves that a stuck program cannot hold the host app."),
+        ("Phase 2 - Curriculum and validation correctness", "PARTIAL", "Prerequisite DAG cycle detection and contract tests are implemented. Add curriculum manifest/version/hash/migration rules, all-mission contract evidence, and explicit starter-code and quote-normalization behavior. Exit when content changes fail fast with actionable validation errors."),
         ("Phase 3 - Integration and device qualification", "PARTIAL", "Add integration tests for the real Flutter-to-runtime path, persistence, navigation, timeout recovery, keyboard, accessibility, and relaunch. Run on the target device/API/ABI matrix and publish logs and screenshots. Exit when the matrix is repeatable and artifact-linked."),
         ("Phase 4 - Release and signing", "PARTIAL", "Configure secret-backed signing, fail closed without secrets, build and verify a signed AAB, retain mapping files and checksums, and complete Play internal testing. Exit when certificate identity and artifact provenance are recorded."),
         ("Phase 5 - CI and evidence automation", "PARTIAL", "Pin Flutter/Python/action versions, run Python plus Dart plus integration suites, build artifacts, upload reports/checksums, and fail on stale runtime archives or missing roadmap metadata. Exit when a pull request receives the same gates as a local release candidate."),
@@ -438,23 +442,27 @@ def add_document_content(doc: Document) -> None:
         9.5,
     )
     file_map = [
-        ("python_src/main.py", "Embedded service constraints, HTTP contract, output cap, import/builtin controls, and explicit non-sandbox limitation."),
-        ("lib/core/engine/python_runner.dart", "Dart readiness polling, JSON request bridge, and request timeout."),
-        ("tooling/package_python_runtime.py", "Deterministic app.zip creation and freshness check."),
+        ("python_src/main.py", "Constrained service policy, authenticated HTTP contract, output cap, import/builtin controls, deadline, and explicit non-sandbox limitation."),
+        ("lib/core/engine/python_runner.dart", "Dart asset-hash verification, worker lifecycle supervision on Android, authenticated JSON bridge, readiness polling, and timeout recovery."),
+        ("lib/core/engine/python_worker_controller.dart", "Narrow platform channel for starting and stopping the Android worker process."),
+        ("lib/main.dart", "Android worker entrypoint and bootstrap channel; web execution returns an explicit unsupported result."),
+        ("android/app/src/main/kotlin/com/example/python_forge/PythonWorkerService.kt", "Application-owned :python_worker process containing the secondary Flutter engine and Serious Python entrypoint."),
+        ("android/app/src/main/AndroidManifest.xml", "Non-exported worker service declaration with a separate Android process."),
+        ("tooling/package_python_runtime.py", "Deterministic app.zip creation plus source/archive hash manifest generation and freshness checks."),
         ("lib/features/curriculum/data/repositories/curriculum_repository.dart", "Curriculum parsing and validation contract."),
         ("lib/core/progression/learning_progress.dart", "Derived unlocks, prerequisites, XP, level, resume, and stale-ID sanitization."),
         ("lib/core/progression/progress_manager.dart", "Idempotent completion, safe legacy migration, and progress-only reset."),
         ("lib/features/curriculum/presentation/screens/mission_screen.dart", "Mission validation, execution, completion, streak, achievements, and next mission."),
         ("lib/features/curriculum/presentation/screens/home_screen.dart", "Dashboard startup reconciliation, responsive title/progress layout, and semantic controls."),
-        (".github/workflows/flutter.yml", "Current local CI definition and its remaining debug-only scope."),
-        ("android/app/build.gradle.kts", "Native packaging and conditional production signing configuration."),
+        (".github/workflows/flutter.yml", "Pinned Flutter/Python quality workflow with archive, Python, Dart, web, APK, checksum, and artifact gates."),
+        ("android/app/build.gradle.kts", "Native packaging, ZIP-named .so strip exclusion, and fail-closed production signing configuration."),
         ("test/ and python_src/test_main.py", "Curriculum, answer, progress, navigation, UI, settings, and direct runtime tests."),
     ]
     for path, purpose in file_map:
         doc.add_status("IMPLEMENTED", path, purpose)
 
     doc.add_heading("8. Risks, assumptions, and decisions", 1)
-    doc.add_bullet("The embedded runtime is bounded constrained execution, not a secure sandbox. Do not make a stronger security claim until Phase 1 is complete.")
+    doc.add_bullet("Android now has a killable worker process, but the runtime remains bounded constrained execution rather than a secure sandbox until OS resource controls and all target-platform backends are verified.")
     doc.add_bullet("A release AAB build passing is not equivalent to a distributable release; signing and certificate verification are still required.")
     doc.add_bullet("One Android device smoke pass is useful evidence but is not a device compatibility matrix.")
     doc.add_bullet("The original PDF remains unchanged. This updated PDF is a new artifact and does not assert that unreadable original body text was reproduced exactly.")
@@ -462,7 +470,7 @@ def add_document_content(doc: Document) -> None:
 
     doc.add_heading("9. Revision change log", 1)
     doc.add_bullet("Added explicit status labels for implemented, partial, planned, blocked, and evidence-gap work.")
-    doc.add_bullet("Recorded completed runtime, packaging, curriculum, progression, navigation, accessibility, build, test, and device changes.")
+    doc.add_bullet("Recorded the Android process worker, authenticated loopback protocol, runtime hash manifest, fail-closed release signing guard, prerequisite cycle detection, expanded CI workflow, and new validation evidence.")
     doc.add_bullet("Added the current validation command/result snapshot and release-symbol packaging explanation.")
     doc.add_bullet("Added remaining blockers and new work for sandbox isolation, integration/device qualification, signing, CI, curriculum DAG checks, version alignment, and evidence traceability.")
     doc.add_bullet("Added brief Phases 0 through 6 and a prioritized next implementation order.")
@@ -470,7 +478,7 @@ def add_document_content(doc: Document) -> None:
 
     doc.add_callout(
         "CURRENT DECISION",
-        "Python Forge is ready for continued internal development and controlled testing. It is not yet ready to claim secure arbitrary-code execution or public production distribution. The next highest-value work is the sandbox architecture decision followed by signed-release and integration/device gates.",
+        "Python Forge is ready for continued internal development and controlled Android testing with the process worker. It is not yet ready to claim secure arbitrary-code execution or public production distribution: resource isolation, non-Android worker backends, hosted evidence, and signed-release verification remain open.",
         (0.90, 0.95, 0.91),
     )
 
